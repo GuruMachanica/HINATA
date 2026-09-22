@@ -59,12 +59,13 @@ def _strip_calls(text: str) -> str:
     cleaned = text
     for blob in _extract_json_objects(text):
         cleaned = cleaned.replace(blob, "")
+    # Remove XML-style tool tags like <tool>...</tool>
+    cleaned = re.sub(r"<tool>.*?</tool>", "", cleaned, flags=re.DOTALL)
     # Remove bracket tool invocations like [query_knowledge("...")]
     cleaned = re.sub(r"\[[a-zA-Z_0-9]+\s*\([^\]]*\)\s*\]", "", cleaned)
     # Remove empty or lonely markdown bold markers like ** or ** **
     cleaned = re.sub(r"\*\*(\s*)\*\*", r"\1", cleaned)
-    cleaned = re.sub(r"\s+\*\*(?=\s|$)", " ", cleaned)
-    cleaned = re.sub(r"(?<=\s|^)\*\*\s+", " ", cleaned)
+    cleaned = re.sub(r"(?:^|\s)\*\*(?:\s|$)", " ", cleaned)
     return cleaned.strip() or "Done."
 
 
@@ -124,6 +125,7 @@ class AgenticToolLoop:
         trace = TurnTrace()
         message = query
         final = ""
+        seen_calls = set()
 
         for _round in range(MAX_TOOL_ROUNDS + 1):
             reply = chat(system, message)
@@ -131,9 +133,24 @@ class AgenticToolLoop:
             if call is None or _round == MAX_TOOL_ROUNDS:
                 final = reply
                 break
-            result = self.tools.dispatch(str(call.get("tool")), dict(call.get("args") or {}))
+
+            tool_name = str(call.get("tool"))
+            tool_args = dict(call.get("args") or {})
+            call_sig = (tool_name, json.dumps(tool_args, sort_keys=True))
+
+            # Prevent infinite repetition of the exact same tool
+            if call_sig in seen_calls:
+                message = (
+                    f"You already executed {tool_name}. Do NOT call any more tools.\n"
+                    f"Now give your direct spoken reply to the user in 1-2 natural sentences:"
+                )
+                final = chat(system, message)
+                break
+            seen_calls.add(call_sig)
+
+            result = self.tools.dispatch(tool_name, tool_args)
             trace.tool_calls.append({
-                "tool": call.get("tool"), "args": call.get("args") or {},
+                "tool": tool_name, "args": tool_args,
                 "ok": result.ok, "output": result.short(300),
             })
             if result.ok:
@@ -141,7 +158,7 @@ class AgenticToolLoop:
                     f"Tool result:\n{result.short()}\n\n"
                     f"Original request: {query}\n"
                     "If you have everything you need, give the FINAL ANSWER as plain "
-                    "prose (no JSON). Otherwise reply with exactly one next tool JSON."
+                    "prose (no JSON, no brackets). Otherwise reply with exactly one next tool JSON."
                 )
             else:
                 message = (
@@ -151,4 +168,10 @@ class AgenticToolLoop:
                 )
 
         final = _strip_calls(final)
+        if not final or final == "Done.":
+            if trace.tool_calls:
+                last_call = trace.tool_calls[-1]
+                final = f"I've completed that for you ({last_call['tool']})."
+            else:
+                final = "Understood!"
         return final, trace
