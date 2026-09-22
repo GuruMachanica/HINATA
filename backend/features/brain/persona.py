@@ -58,4 +58,14 @@ class Persona:
 
     @staticmethod
     def strip_mood_tag(reply: str) -> str:
-        return MOOD_RE.sub("", reply).strip()
+        clean = MOOD_RE.sub("", reply).strip()
+        # Strip 3rd person roleplay stage directions like *HINATA twitches...* or *sighs*
+        clean = re.sub(r"\*[^*]+\*", "", clean).strip()
+        # Strip outer enclosing quotes if whole message is wrapped in quotes
+        if ((clean.startswith('"') and clean.endswith('"')) or
+            (clean.startswith('“') and clean.endswith('”'))) and len(clean) > 2:
+            clean = clean[1:-1].strip()
+        # Collapse whitespace
+        clean = re.sub(r"[ \t]+", " ", clean)
+        clean = re.sub(r"\n{3,}", "\n\n", clean)
+        return clean.strip()

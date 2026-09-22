@@ -73,7 +73,7 @@ export default function App() {
         <header className="chat-header">
           <h1>HINATA <span>CORTEX</span></h1>
         </header>
-        <ChatFeed messages={messages} onSend={sendChat} />
+        <ChatFeed messages={messages} onSend={sendChat} state={state} />
         <KGPanel events={kgEvents} />
       </main>
     </div>
