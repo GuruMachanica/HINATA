@@ -78,6 +78,7 @@ shell-bella/models/farah/*
 
 # Databases (Local conversations, memory, knowledge graph)
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
 

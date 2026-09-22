@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
 from fastapi.staticfiles import StaticFiles
 
 from ...core.base_feature import BaseFeature, register
@@ -28,8 +28,12 @@ class ServerFeature(BaseFeature):
         brain = get(BrainFeature.name)
         self.chat = WSChatHandler(self.bus, brain.think)
         self._mount_api()
-        self._mount_assets()
         self.app.add_api_websocket_route("/ws", self._ws_endpoint)
+        self.app.add_api_websocket_route("/", self._ws_endpoint)
+        @self.app.get("/favicon.ico", include_in_schema=False)
+        async def _favicon() -> Response:
+            return Response(status_code=204)
+        self._mount_assets()
 
     def _mount_api(self) -> None:
         from ...features.voice import VoiceFeature

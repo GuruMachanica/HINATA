@@ -22,9 +22,10 @@ class Database:
     def connect(self) -> sqlite3.Connection:
         conn = getattr(self._local, "conn", None)
         if conn is None:
-            conn = sqlite3.connect(self._path)
+            conn = sqlite3.connect(self._path, timeout=30.0)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout = 30000")
             self._local.conn = conn
         return conn
 

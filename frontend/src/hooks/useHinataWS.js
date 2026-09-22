@@ -19,42 +19,63 @@ export function useHinataWS(onEvent) {
 
   useEffect(() => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}`);
-    wsRef.current = ws;
+    let timeoutId = null;
+    let ws = null;
+    let isDisposed = false;
 
-    ws.onopen = () => setState('online');
-    ws.onclose = () => { setState('reconnecting'); setTimeout(() => ws.close(), 2000); };
+    function connect() {
+      if (isDisposed) return;
+      ws = new WebSocket(`${proto}://${location.host}/ws`);
+      wsRef.current = ws;
 
-    ws.onmessage = (event) => {
-      let msg;
-      try { msg = JSON.parse(event.data); } catch { return; }
-      const { type, payload } = msg;
-      onEventRef.current?.(type, payload);
+      ws.onopen = () => setState('online');
+      ws.onclose = () => {
+        setState('reconnecting');
+        if (!isDisposed) {
+          timeoutId = setTimeout(connect, 2000);
+        }
+      };
+      ws.onerror = () => {
+        ws.close();
+      };
 
-      switch (type) {
-        case 'connection_status':
-          setState(payload.connected ? 'online' : 'reconnecting');
-          break;
-        case 'agent_state':
-          setState(payload.state);
-          break;
-        case 'agent_response':
-          setMessages((m) => [...m, {
-            role: 'assistant', sender: 'HINATA', text: payload.content, mood: payload.mood,
-          }]);
-          break;
-        case 'avatar_mood':
-          setMood(payload.mood);
-          break;
-        case 'kg_update':
-          setKgEvents((k) => [...k.slice(-9), payload]);
-          break;
-        default:
-          break;
-      }
+      ws.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch { return; }
+        const { type, payload } = msg;
+        onEventRef.current?.(type, payload);
+
+        switch (type) {
+          case 'connection_status':
+            setState(payload.connected ? 'online' : 'reconnecting');
+            break;
+          case 'agent_state':
+            setState(payload.state);
+            break;
+          case 'agent_response':
+            setMessages((m) => [...m, {
+              role: 'assistant', sender: 'HINATA', text: payload.content, mood: payload.mood,
+            }]);
+            break;
+          case 'avatar_mood':
+            setMood(payload.mood);
+            break;
+          case 'kg_update':
+            setKgEvents((k) => [...k.slice(-9), payload]);
+            break;
+          default:
+            break;
+        }
+      };
+    }
+
+    connect();
+
+    return () => {
+      isDisposed = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (ws) ws.close();
     };
-
-    return () => ws.close();
   }, []);
 
   const sendChat = useCallback((query) => {

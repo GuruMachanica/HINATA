@@ -39,6 +39,7 @@ class KnowledgeGraphStore:
             "last_seen=excluded.last_seen, mention_count=mention_count+1",
             (name[:80], kind, now, now),
         )
+        db.connect().commit()
 
     def reinforce(self, subject: str, relation: str, object_: str,
                   confidence: float = 0.5, source: str = "inferred") -> None:
@@ -52,6 +53,7 @@ class KnowledgeGraphStore:
         )
         self.touch_entity(subject)
         self.touch_entity(object_)
+        db.connect().commit()
 
     def decay(self) -> None:
         cutoff = time.time() - DECAY_AFTER_S
@@ -60,6 +62,7 @@ class KnowledgeGraphStore:
             (DECAY_FACTOR, cutoff),
         )
         db.connect().execute("DELETE FROM triples WHERE weight < ?", (MIN_WEIGHT,))
+        db.connect().commit()
 
     def related(self, entity: str, limit: int = 15) -> List[Dict[str, Any]]:
         rows = db.connect().execute(
