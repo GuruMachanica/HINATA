@@ -3,14 +3,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..base import Tool, ToolResult
+from ..base import Tool, ToolParam, ToolResult, ToolRiskLevel
 from ....core.event_bus import Event
 
 
 class RecallMemoryTool(Tool):
     name = "recall_memory"
     description = "Search past conversations by keyword. Use when the user references something earlier."
-    params = [type("P", (), {"name": "term", "type": "string", "description": "keyword to search", "required": True})()]
+    risk_level = ToolRiskLevel.READ_ONLY
+    params = [
+        ToolParam("term", "string", "keyword to search in conversation history", required=True, min_len=1, max_len=100),
+    ]
 
     def run(self, term: str = "", **_: Any) -> ToolResult:
         event = Event(name="memory.search", payload={"term": term, "limit": 5}, source=self.name)
@@ -22,7 +25,6 @@ class RecallMemoryTool(Tool):
 
     @staticmethod
     def _ask_bus(event: Event) -> list | None:
-        # bus emits synchronously; memory feature fills payload via handler
         from ....core.event_bus import bus
         response = bus.emit("memory.search.query", dict(event.payload), source=event.source)
         return response.payload.get("results")
@@ -31,7 +33,10 @@ class RecallMemoryTool(Tool):
 class KnowledgeQueryTool(Tool):
     name = "query_knowledge"
     description = "Search the knowledge graph for facts and associations about a person/topic/thing."
-    params = [type("P", (), {"name": "term", "type": "string", "description": "entity or topic", "required": True})()]
+    risk_level = ToolRiskLevel.READ_ONLY
+    params = [
+        ToolParam("term", "string", "entity or topic to query", required=True, min_len=1, max_len=100),
+    ]
 
     def run(self, term: str = "", **_: Any) -> ToolResult:
         from ....core.event_bus import bus
@@ -45,10 +50,11 @@ class KnowledgeQueryTool(Tool):
 
 class RememberFactTool(Tool):
     name = "remember_fact"
-    description = "Store an important fact about the user permanently in the knowledge graph."
+    description = "Store an explicit fact about the user permanently in the knowledge graph."
+    risk_level = ToolRiskLevel.MUTATING
     params = [
-        type("P", (), {"name": "relation", "type": "string", "description": "e.g. likes, is_a, has_value", "required": True})(),
-        type("P", (), {"name": "object", "type": "string", "description": "the fact content", "required": True})(),
+        ToolParam("relation", "string", "relation type e.g. likes, is_a, has_value", required=True, min_len=1, max_len=50),
+        ToolParam("object", "string", "the fact content or entity", required=True, min_len=1, max_len=150),
     ]
 
     def run(self, relation: str = "", object: str = "", **_: Any) -> ToolResult:
@@ -65,8 +71,9 @@ class ResetKnowledgeTool(Tool):
         "Use target='all' to purge all knowledge and past conversation history, "
         "or pass a specific keyword/topic to delete only matching entries."
     )
+    risk_level = ToolRiskLevel.MUTATING
     params = [
-        type("P", (), {"name": "target", "type": "string", "description": "'all' or specific entity/topic name", "required": False})(),
+        ToolParam("target", "string", "'all' or specific entity/topic name", required=False, min_len=1, max_len=100),
     ]
 
     def run(self, target: str = "all", **_: Any) -> ToolResult:

@@ -497,11 +497,43 @@ let audioCtx = null;
 let analyser = null;
 let analyserData = null;
 let currentSource = null;
+let reconnectDelayMs = 1500;
+const MAX_RECONNECT_DELAY_MS = 25000;
+let reconnectTimer = null;
+let isUnloaded = false;
+
+window.addEventListener('beforeunload', () => {
+  isUnloaded = true;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  if (ws) {
+    try { ws.close(); } catch {}
+  }
+});
+
+function scheduleReconnect() {
+  if (isUnloaded) return;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(() => {
+    reconnectDelayMs = Math.min(MAX_RECONNECT_DELAY_MS, Math.round(reconnectDelayMs * 1.5));
+    connectGateway();
+  }, reconnectDelayMs);
+}
 
 function connectGateway() {
-  ws = new WebSocket(GATEWAY_WS);
-  ws.addEventListener('open', () => console.log('[HINATA overlay] gateway connected'));
-  ws.addEventListener('close', () => setTimeout(connectGateway, 3000));
+  if (isUnloaded) return;
+  try {
+    ws = new WebSocket(GATEWAY_WS);
+  } catch (e) {
+    scheduleReconnect();
+    return;
+  }
+
+  ws.addEventListener('open', () => {
+    console.log('[HINATA overlay] gateway connected');
+    reconnectDelayMs = 1500;
+  });
+  ws.addEventListener('close', () => scheduleReconnect());
+  ws.addEventListener('error', () => {});
   ws.addEventListener('message', (event) => {
     let msg;
     try { msg = JSON.parse(event.data); } catch { return; }

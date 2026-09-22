@@ -7,8 +7,6 @@ from typing import Dict, Type
 
 from .event_bus import EventBus, bus as default_bus
 
-from .event_bus import EventBus, bus as default_bus
-
 
 class BaseFeature(ABC):
     """A feature owns its storage, subscribes to events, emits its own.

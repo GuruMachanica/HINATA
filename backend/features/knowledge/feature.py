@@ -30,6 +30,7 @@ class KnowledgeFeature(BaseFeature):
         entity = event.payload.get("entity")
         count = self.store.clear(entity=entity)
         event.payload["cleared_count"] = count
+
     def _on_search(self, event: Event) -> None:
         event.payload["results"] = self.store.search(
             event.payload.get("term", ""), event.payload.get("limit", 8),
@@ -61,14 +62,13 @@ class KnowledgeFeature(BaseFeature):
             for j in range(i + 1, len(entities)):
                 self.store.reinforce(entities[i], "co_occurs", entities[j], confidence=0.35)
         facts = extract_facts(user_text)
-        for relation, obj, conf in facts:
-            self.store.reinforce("user", relation, obj, confidence=conf, source="stated")
+        for relation, obj, conf, src in facts:
+            self.store.reinforce("user", relation, obj, confidence=conf, source=src)
         for ent in extract_entities(hinata_reply):
             self.store.touch_entity(ent, kind="topic")
         self.store.decay()
-        self.bus.connect if hasattr(self.bus, "connect") else None
         return {"entities": entities, "facts_added": [
-            {"relation": r, "object": o, "confidence": c} for r, o, c in facts
+            {"relation": r, "object": o, "confidence": c, "source": s} for r, o, c, s in facts
         ]}
 
     # -- prompt context --------------------------------------------------------

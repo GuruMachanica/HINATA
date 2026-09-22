@@ -1,6 +1,7 @@
 """BrainFeature — HINATA's mind: perceive, recall, act, speak, learn, emote."""
 from __future__ import annotations
 
+import threading
 import time
 from typing import Any, Dict, Optional
 
@@ -23,9 +24,9 @@ class BrainFeature(BaseFeature):
         self.engine = HermesEngine()
         self.agentic: Optional[AgenticToolLoop] = None
         self.context: Optional[ContextBuilder] = None
+        self._think_lock = threading.Lock()
 
     def setup(self) -> None:
-        # late imports avoid circulars; features resolve via package registry
         from ...features.tools.registry import load_builtin_tools
         tools = load_builtin_tools()
         self.agentic = AgenticToolLoop(tools)
@@ -33,33 +34,31 @@ class BrainFeature(BaseFeature):
         self.log.info("agentic mode=%s, tools=%d", AGENTIC_MODE, len(tools.all()))
 
     def think(self, query: str) -> Dict[str, Any]:
-        """Full cognition cycle; returns reply + mood + trace + latency."""
+        """Full cognition cycle with serialized model inference; returns reply + mood + trace + latency."""
         started = time.time()
 
-        kg_payload = self.context.knowledge_context(query)
-        system = self.context.system_prompt(self.persona.soul(), AGENTIC_MODE)
-        user_msg = query
-        ctx_block = self.context.user_context(query)
-        if ctx_block:
-            user_msg = f"{ctx_block}\n---\n\nUser: {query}"
+        with self._think_lock:
+            ctx_block, kg_used = self.context.user_context_bundle(query)
+            system = self.context.system_prompt(self.persona.soul(), AGENTIC_MODE)
+            user_msg = f"{ctx_block}\n---\n\nUser: {query}" if ctx_block else query
 
-        if AGENTIC_MODE:
-            reply, trace = self.agentic.run(user_msg, system, self.engine.chat)
-        else:
-            reply, trace = self.engine.chat(system, user_msg), None
+            if AGENTIC_MODE:
+                reply, trace = self.agentic.run(user_msg, system, self.engine.chat)
+            else:
+                reply, trace = self.engine.chat(system, user_msg), None
 
-        mood = self.persona.detect_mood(reply)
-        clean = self.persona.strip_mood_tag(reply)
+            mood = self.persona.detect_mood(reply)
+            clean = self.persona.strip_mood_tag(reply)
 
-        self._learn(query, clean, mood)
-        return {
-            "reply": clean,
-            "mood": mood,
-            "mood_meta": MOODS.get(mood, MOODS["neutral"]),
-            "latency_ms": int((time.time() - started) * 1000),
-            "trace": trace.as_lines() if trace else [],
-            "kg_context_used": bool(kg_payload.get("block")),
-        }
+            self._learn(query, clean, mood)
+            return {
+                "reply": clean,
+                "mood": mood,
+                "mood_meta": MOODS.get(mood, MOODS["neutral"]),
+                "latency_ms": int((time.time() - started) * 1000),
+                "trace": trace.as_lines() if trace else [],
+                "kg_context_used": kg_used,
+            }
 
     def _learn(self, query: str, reply: str, mood: str) -> None:
         self.bus.emit("memory.append", {
@@ -77,5 +76,5 @@ class BrainFeature(BaseFeature):
     def ponder(self, seed_prompt: str) -> Dict[str, Any]:
         return self.think(seed_prompt)
 
-    def _unused(self, _event: Event) -> None:  # keeps Event import used
+    def _unused(self, _event: Event) -> None:
         pass

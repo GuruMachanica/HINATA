@@ -27,65 +27,85 @@ DECAY_FACTOR = 0.92
 MIN_WEIGHT = 0.05
 
 
+def _escape_like(term: str) -> str:
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class KnowledgeGraphStore:
     def setup(self) -> None:
         db.setup(_SCHEMA)
 
     def touch_entity(self, name: str, kind: str = "concept") -> None:
         now = time.time()
-        db.connect().execute(
-            "INSERT INTO entities(name, kind, first_seen, last_seen, mention_count) "
-            "VALUES(?,?,?,?,1) ON CONFLICT(name) DO UPDATE SET "
-            "last_seen=excluded.last_seen, mention_count=mention_count+1",
-            (name[:80], kind, now, now),
-        )
-        db.connect().commit()
+        with db.write_transaction() as conn:
+            conn.execute(
+                "INSERT INTO entities(name, kind, first_seen, last_seen, mention_count) "
+                "VALUES(?,?,?,?,1) ON CONFLICT(name) DO UPDATE SET "
+                "last_seen=excluded.last_seen, mention_count=mention_count+1",
+                (name[:80], kind, now, now),
+            )
 
     def reinforce(self, subject: str, relation: str, object_: str,
                   confidence: float = 0.5, source: str = "inferred") -> None:
         now = time.time()
-        db.connect().execute(
-            "INSERT INTO triples(subject, relation, object, weight, confidence, source, "
-            "created_at, last_reinforced) VALUES(?,?,?,1.0,?,?,?,?) "
-            "ON CONFLICT(subject, relation, object) DO UPDATE SET "
-            "weight=MIN(weight+0.5,20.0), last_reinforced=excluded.last_reinforced",
-            (subject[:80], relation, object_[:120], confidence, source, now, now),
-        )
-        self.touch_entity(subject)
-        self.touch_entity(object_)
-        db.connect().commit()
+        with db.write_transaction() as conn:
+            conn.execute(
+                "INSERT INTO triples(subject, relation, object, weight, confidence, source, "
+                "created_at, last_reinforced) VALUES(?,?,?,1.0,?,?,?,?) "
+                "ON CONFLICT(subject, relation, object) DO UPDATE SET "
+                "weight=MIN(weight+0.5,20.0), last_reinforced=excluded.last_reinforced",
+                (subject[:80], relation, object_[:120], confidence, source, now, now),
+            )
+            # update entities within same transaction
+            conn.execute(
+                "INSERT INTO entities(name, kind, first_seen, last_seen, mention_count) "
+                "VALUES(?, 'concept', ?, ?, 1) ON CONFLICT(name) DO UPDATE SET "
+                "last_seen=excluded.last_seen, mention_count=mention_count+1",
+                (subject[:80], now, now),
+            )
+            conn.execute(
+                "INSERT INTO entities(name, kind, first_seen, last_seen, mention_count) "
+                "VALUES(?, 'concept', ?, ?, 1) ON CONFLICT(name) DO UPDATE SET "
+                "last_seen=excluded.last_seen, mention_count=mention_count+1",
+                (object_[:80], now, now),
+            )
 
     def decay(self) -> None:
         cutoff = time.time() - DECAY_AFTER_S
-        db.connect().execute(
-            "UPDATE triples SET weight=weight*? WHERE last_reinforced < ?",
-            (DECAY_FACTOR, cutoff),
-        )
-        db.connect().execute("DELETE FROM triples WHERE weight < ?", (MIN_WEIGHT,))
-        db.connect().commit()
+        with db.write_transaction() as conn:
+            conn.execute(
+                "UPDATE triples SET weight=weight*? WHERE last_reinforced < ?",
+                (DECAY_FACTOR, cutoff),
+            )
+            conn.execute("DELETE FROM triples WHERE weight < ?", (MIN_WEIGHT,))
 
     def related(self, entity: str, limit: int = 15) -> List[Dict[str, Any]]:
+        safe_limit = max(1, min(int(limit or 15), 100))
+        target = entity.strip().lower()
         rows = db.connect().execute(
             "SELECT subject, relation, object, weight, confidence, source FROM triples "
             "WHERE LOWER(subject)=? OR LOWER(object)=? ORDER BY weight DESC LIMIT ?",
-            (entity.lower(), entity.lower(), limit),
+            (target, target, safe_limit),
         ).fetchall()
         return [dict(r) for r in rows]
 
     def search(self, term: str, limit: int = 8) -> List[Dict[str, Any]]:
-        like = f"%{term.lower()}%"
+        safe_limit = max(1, min(int(limit or 8), 100))
+        like = f"%{_escape_like(term.strip().lower())}%"
         rows = db.connect().execute(
             "SELECT subject, relation, object, weight, source FROM triples "
-            "WHERE LOWER(subject) LIKE ? OR LOWER(object) LIKE ? ORDER BY weight DESC LIMIT ?",
-            (like, like, limit),
+            "WHERE (LOWER(subject) LIKE ? ESCAPE '\\' OR LOWER(object) LIKE ? ESCAPE '\\') "
+            "ORDER BY weight DESC LIMIT ?",
+            (like, like, safe_limit),
         ).fetchall()
         return [dict(r) for r in rows]
 
     def stated_facts(self, limit: int = 10) -> List[Dict[str, Any]]:
+        safe_limit = max(1, min(int(limit or 10), 100))
         rows = db.connect().execute(
             "SELECT relation, object, weight, confidence FROM triples "
             "WHERE source='stated' ORDER BY weight DESC, last_reinforced DESC LIMIT ?",
-            (limit,),
+            (safe_limit,),
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -100,21 +120,20 @@ class KnowledgeGraphStore:
         }
 
     def clear(self, entity: str | None = None) -> int:
-        conn = db.connect()
-        if entity and entity.strip().lower() != "all":
-            target = f"%{entity.lower().strip()}%"
-            c1 = conn.execute(
-                "DELETE FROM triples WHERE LOWER(subject) LIKE ? OR LOWER(object) LIKE ?",
-                (target, target),
-            ).rowcount
-            c2 = conn.execute(
-                "DELETE FROM entities WHERE LOWER(name) LIKE ?",
-                (target,),
-            ).rowcount
-            conn.commit()
-            return c1 + c2
-        else:
-            c1 = conn.execute("DELETE FROM triples").rowcount
-            c2 = conn.execute("DELETE FROM entities").rowcount
-            conn.commit()
-            return c1 + c2
+        with db.write_transaction() as conn:
+            if entity and entity.strip().lower() not in ("all", "everything"):
+                target = entity.lower().strip()
+                # Exact match deletion to prevent wiping unrelated entities/triples
+                c1 = conn.execute(
+                    "DELETE FROM triples WHERE LOWER(subject) = ? OR LOWER(object) = ?",
+                    (target, target),
+                ).rowcount
+                c2 = conn.execute(
+                    "DELETE FROM entities WHERE LOWER(name) = ?",
+                    (target,),
+                ).rowcount
+                return c1 + c2
+            else:
+                c1 = conn.execute("DELETE FROM triples").rowcount
+                c2 = conn.execute("DELETE FROM entities").rowcount
+                return c1 + c2

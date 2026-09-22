@@ -1,19 +1,19 @@
-"""SQLite connection provider — shared, thread-safe, feature-scoped tables."""
+"""SQLite connection provider — shared, thread-safe, serialized writes."""
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Optional
+from typing import Any, Generator, Optional
 
 from .config import DB_PATH
 
-_lock = threading.Lock()
-_conn: Optional[sqlite3.Connection] = None
+_write_lock = threading.RLock()
 
 
 class Database:
-    """One shared SQLite connection; each feature owns its own tables."""
+    """Thread-local SQLite connection with serialized write transactions."""
 
     def __init__(self, path: Path = DB_PATH) -> None:
         self._path = path
@@ -26,13 +26,31 @@ class Database:
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA busy_timeout = 30000")
+            conn.execute("PRAGMA synchronous = NORMAL")
             self._local.conn = conn
         return conn
 
+    @contextlib.contextmanager
+    def write_transaction(self) -> Generator[sqlite3.Connection, None, None]:
+        """Serialize database writes across threads with automatic commit/rollback."""
+        with _write_lock:
+            conn = self.connect()
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+
+    def execute_write(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
+        with self.write_transaction() as conn:
+            return conn.execute(sql, params)
+
     def setup(self, schema: str) -> None:
-        with _lock:
-            self.connect().executescript(schema)
-            self.connect().commit()
+        with _write_lock:
+            conn = self.connect()
+            conn.executescript(schema)
+            conn.commit()
 
 
 db = Database()

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Callable, Dict
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 
 from ...core.base_feature import get
 
@@ -25,10 +25,11 @@ def build_api_router(tts_bytes: Callable[[str], bytes | None]) -> APIRouter:
         }
 
     @router.get("/kg/graph")
-    def kg_graph(limit: int = 200) -> Dict:
+    def kg_graph(limit: int = Query(default=200, ge=1, le=200)) -> Dict:
         from ...features.knowledge import KnowledgeFeature
         store = get(KnowledgeFeature.name).store
-        return {"nodes": store.search("", limit=limit), "edges": store.related("", limit=limit)}
+        safe_limit = max(1, min(limit, 200))
+        return {"nodes": store.search("", limit=safe_limit), "edges": store.related("", limit=safe_limit)}
 
     @router.get("/kg/summary")
     def kg_summary() -> Dict:
@@ -36,28 +37,37 @@ def build_api_router(tts_bytes: Callable[[str], bytes | None]) -> APIRouter:
         return get(KnowledgeFeature.name).summary()
 
     @router.get("/kg/search")
-    def kg_search(term: str, limit: int = 20) -> Dict:
+    def kg_search(term: str = Query(..., min_length=1, max_length=100), limit: int = Query(default=20, ge=1, le=50)) -> Dict:
         from ...features.knowledge import KnowledgeFeature
-        return {"term": term, "results": get(KnowledgeFeature.name).store.search(term, limit)}
+        safe_limit = max(1, min(limit, 50))
+        return {"term": term, "results": get(KnowledgeFeature.name).store.search(term, safe_limit)}
 
     @router.get("/kg/facts")
-    def kg_facts(limit: int = 30) -> Dict:
+    def kg_facts(limit: int = Query(default=30, ge=1, le=100)) -> Dict:
         from ...features.knowledge import KnowledgeFeature
-        return {"facts": get(KnowledgeFeature.name).store.stated_facts(limit)}
+        safe_limit = max(1, min(limit, 100))
+        return {"facts": get(KnowledgeFeature.name).store.stated_facts(safe_limit)}
 
     @router.get("/memory/search")
-    def memory_search(term: str, limit: int = 10) -> Dict:
+    def memory_search(term: str = Query(..., min_length=1, max_length=100), limit: int = Query(default=10, ge=1, le=50)) -> Dict:
         from ...features.memory import MemoryFeature
-        return {"term": term, "results": get(MemoryFeature.name).store.search(term, limit)}
+        safe_limit = max(1, min(limit, 50))
+        return {"term": term, "results": get(MemoryFeature.name).store.search(term, safe_limit)}
 
     @router.get("/memory/recent")
-    def memory_recent(limit: int = 20) -> Dict:
+    def memory_recent(limit: int = Query(default=20, ge=1, le=100)) -> Dict:
         from ...features.memory import MemoryFeature
-        return {"turns": get(MemoryFeature.name).store.recent(limit)}
+        safe_limit = max(1, min(limit, 100))
+        return {"turns": get(MemoryFeature.name).store.recent(safe_limit)}
 
     @router.get("/tts")
-    def tts(text: str) -> Response:
-        audio = tts_bytes(text)
+    def tts(text: str = Query(..., min_length=1, max_length=500)) -> Response:
+        clean = text.strip()
+        if not clean:
+            raise HTTPException(status_code=400, detail="text cannot be empty")
+        if len(clean) > 500:
+            raise HTTPException(status_code=400, detail="text exceeds 500 characters limit")
+        audio = tts_bytes(clean)
         if not audio:
             raise HTTPException(status_code=503, detail="tts_failed")
         return Response(content=audio, media_type="audio/mpeg")

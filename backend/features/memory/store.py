@@ -21,6 +21,11 @@ CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id);
 SESSION_TIMEOUT_S = 2 * 3600
 
 
+def _escape_like(term: str) -> str:
+    """Escape SQL LIKE wildcards (% and _) for literal substring matching."""
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class MemoryStore:
     def __init__(self) -> None:
         self._session: Optional[str] = None
@@ -41,25 +46,28 @@ class MemoryStore:
         return self._session
 
     def append(self, role: str, content: str, mood: str | None = None) -> int:
-        cur = db.connect().execute(
-            "INSERT INTO messages(session_id, role, content, mood, created_at) VALUES(?,?,?,?,?)",
-            (self.session_id(), role, content, mood, time.time()),
-        )
-        db.connect().commit()
-        return cur.lastrowid
+        with db.write_transaction() as conn:
+            cur = conn.execute(
+                "INSERT INTO messages(session_id, role, content, mood, created_at) VALUES(?,?,?,?,?)",
+                (self.session_id(), role, content, mood, time.time()),
+            )
+            return cur.lastrowid
 
     def recent(self, limit: int = 20) -> List[Dict[str, Any]]:
+        safe_limit = max(1, min(int(limit or 20), 100))
         rows = db.connect().execute(
             "SELECT role, content, mood, created_at FROM messages ORDER BY id DESC LIMIT ?",
-            (limit,),
+            (safe_limit,),
         ).fetchall()
         return [dict(r) for r in reversed(rows)]
 
     def search(self, term: str, limit: int = 5) -> List[Dict[str, Any]]:
+        safe_limit = max(1, min(int(limit or 5), 50))
+        pattern = f"%{_escape_like(term)}%"
         rows = db.connect().execute(
-            "SELECT role, content, created_at FROM messages WHERE content LIKE ? "
+            "SELECT role, content, created_at FROM messages WHERE content LIKE ? ESCAPE '\\' "
             "ORDER BY created_at DESC LIMIT ?",
-            (f"%{term}%", limit),
+            (pattern, safe_limit),
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -70,7 +78,6 @@ class MemoryStore:
         return {"total_messages": total, "sessions": sessions}
 
     def clear(self) -> int:
-        conn = db.connect()
-        c = conn.execute("DELETE FROM messages").rowcount
-        conn.commit()
-        return c
+        with db.write_transaction() as conn:
+            c = conn.execute("DELETE FROM messages").rowcount
+            return c

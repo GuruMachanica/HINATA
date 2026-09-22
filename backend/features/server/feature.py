@@ -49,6 +49,30 @@ class ServerFeature(BaseFeature):
                            name="frontend")
 
     async def _ws_endpoint(self, ws: WebSocket) -> None:
+        origin = ws.headers.get("origin", "")
+        if origin:
+            allowed = (
+                origin.startswith("http://localhost")
+                or origin.startswith("https://localhost")
+                or origin.startswith("http://127.0.0.1")
+                or origin.startswith("https://127.0.0.1")
+                or origin.startswith("vscode-webview://")
+                or origin.startswith("app://")
+                or origin.startswith("file://")
+            )
+            if not allowed:
+                self.log.warning("blocked unauthorized WebSocket origin: %s", origin)
+                await ws.close(code=4403, reason="unauthorized origin")
+                return
+
+        from ...core.config import AUTH_TOKEN
+        if AUTH_TOKEN:
+            token = ws.query_params.get("token") or ws.headers.get("authorization", "").replace("Bearer ", "")
+            if token != AUTH_TOKEN:
+                self.log.warning("blocked WebSocket with invalid token")
+                await ws.close(code=4401, reason="unauthorized token")
+                return
+
         await ws.accept()
         conn = ConnectionState(ws)
         await conn.send("connection_status", {"connected": True, "companion": "HINATA"})

@@ -1,7 +1,7 @@
 """ContextBuilder — assembles everything the brain needs per turn."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Tuple
 
 from ...core.event_bus import EventBus
 from ...features.tools.registry import ToolRegistry
@@ -12,8 +12,8 @@ class ContextBuilder:
         self.bus = bus
         self.tools = tools
 
-    def user_context(self, query: str) -> str:
-        """Memory history + KG associations relevant to this query."""
+    def user_context_bundle(self, query: str) -> Tuple[str, bool]:
+        """Fetch memory history and KG associations in a single unified pass."""
         blocks = []
 
         recent = self.bus.emit("memory.recent.query", {"limit": 10}).payload.get("turns") or []
@@ -23,10 +23,16 @@ class ContextBuilder:
             blocks.append("Recent conversation:\n" + "\n".join(lines))
 
         kg = self.bus.emit("knowledge.context", {"hints": self._entities(query)}).payload
-        if kg.get("block"):
-            blocks.append(kg["block"])
+        kg_block = kg.get("block")
+        if kg_block:
+            blocks.append(kg_block)
 
-        return "\n\n".join(blocks)
+        return "\n\n".join(blocks), bool(kg_block)
+
+    def user_context(self, query: str) -> str:
+        """Memory history + KG associations relevant to this query."""
+        block, _ = self.user_context_bundle(query)
+        return block
 
     def knowledge_context(self, query: str) -> dict:
         return self.bus.emit("knowledge.context", {"hints": self._entities(query)}).payload

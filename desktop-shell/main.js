@@ -30,11 +30,23 @@ let wanderRepathAt = 0;
 let charScreenX = -1, charScreenY = -1;
 const CHAR_W = 440, CHAR_H = 580;
 
+function getActiveDisplay() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      const bounds = mainWindow.getBounds();
+      const matched = screen.getDisplayMatching(bounds);
+      if (matched) return matched;
+    } catch {}
+  }
+  const cursorPoint = screen.getCursorScreenPoint();
+  return screen.getDisplayNearestPoint(cursorPoint) || screen.getPrimaryDisplay();
+}
+
 function startMovementEngine() {
   moveInterval = setInterval(() => {
     if (!mainWindow || !mainWindow.isVisible() || moveMode === 'off') return;
 
-    const wa = screen.getPrimaryDisplay().workArea;
+    const wa = getActiveDisplay().workArea;
     if (charScreenX < 0) {
       // First run: bottom-right, above the taskbar
       charScreenX = wa.width - CHAR_W - 40;
@@ -94,7 +106,8 @@ function startCursorTracking() {
     const [ww, wh] = mainWindow.getSize();
     const centerX = wx + ww / 2;
     const centerY = wy + wh / 2;
-    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    const activeDisp = getActiveDisplay();
+    const { width: sw, height: sh } = activeDisp.workAreaSize;
     const nx = Math.max(-1, Math.min(1, (cx - centerX) / (sw / 2)));
     const ny = Math.max(-1, Math.min(1, (cy - centerY) / (sh / 2)));
     mainWindow.webContents.send('cursor:position', { x: nx, y: ny });

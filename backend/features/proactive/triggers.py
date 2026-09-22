@@ -58,15 +58,27 @@ class SystemHealthTrigger(Trigger):
     def evaluate(self) -> Optional[str]:
         from ...features.tools.registry import load_builtin_tools
         result = load_builtin_tools().dispatch("get_system_info", {})
-        if result.ok and ("temperature" in result.output or "GB free" in result.output):
-            low_disk = "free" in result.output and any(
-                part.strip().startswith("Disk:") and part.split()[1].startswith("1")
-                for part in result.output.splitlines()
-            )
-            hot = "8" in result.output  # crude: temperature with 80s
-            if low_disk or hot:
-                return ("System check shows the machine may be low on disk or running hot. "
-                        "Tell the user in one short caring sentence.")
+        if not result.ok:
+            return None
+
+        data = result.data or {}
+        free_ratio = data.get("disk_free_ratio")
+        free_gb = data.get("disk_free_gb")
+        gpu_temp = data.get("gpu_temp_c")
+
+        # Numerical thresholds: less than 8% disk free or under 15GB; GPU temp >= 82C
+        low_disk = (free_ratio is not None and free_ratio < 0.08) or (free_gb is not None and free_gb < 15)
+        hot = (gpu_temp is not None and gpu_temp >= 82)
+
+        if low_disk and hot:
+            return ("System check shows low storage and high GPU temperature. "
+                    "Tell the user in one short caring sentence.")
+        elif low_disk:
+            return ("System check shows disk storage is running low. "
+                    "Remind the user in one short caring sentence.")
+        elif hot:
+            return ("System check shows the GPU is running hot. "
+                    "Advise the user gently in one short sentence.")
         return None
 
 

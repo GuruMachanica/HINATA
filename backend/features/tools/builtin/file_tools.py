@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ....core.config import ROOT_DIR
-from ..base import Tool, ToolResult
+from ..base import Tool, ToolParam, ToolResult, ToolRiskLevel
 
 MAX_READ_BYTES = 20_000
 
@@ -22,7 +22,10 @@ def _safe_path(raw: str) -> Path | None:
 class ReadFileTool(Tool):
     name = "read_file"
     description = "Read a text file (relative to the HINATA project root)."
-    params = [type("P", (), {"name": "path", "type": "string", "description": "relative path", "required": True})()]
+    risk_level = ToolRiskLevel.READ_ONLY
+    params = [
+        ToolParam("path", "string", "relative file path", required=True, min_len=1, max_len=300),
+    ]
 
     def run(self, path: str = "", **_: Any) -> ToolResult:
         p = _safe_path(path)
@@ -38,7 +41,10 @@ class ReadFileTool(Tool):
 class ListDirTool(Tool):
     name = "list_dir"
     description = "List a directory (relative to the project root)."
-    params = [type("P", (), {"name": "path", "type": "string", "description": "relative dir", "required": False})()]
+    risk_level = ToolRiskLevel.READ_ONLY
+    params = [
+        ToolParam("path", "string", "relative directory path", required=False, min_len=1, max_len=300),
+    ]
 
     def run(self, path: str = ".", **_: Any) -> ToolResult:
         p = _safe_path(path) or ROOT_DIR
@@ -53,9 +59,10 @@ class ListDirTool(Tool):
 class WriteFileTool(Tool):
     name = "write_file"
     description = "Write text to a file inside the project root (creates parents)."
+    risk_level = ToolRiskLevel.MUTATING
     params = [
-        type("P", (), {"name": "path", "type": "string", "description": "relative path", "required": True})(),
-        type("P", (), {"name": "content", "type": "string", "description": "file content", "required": True})(),
+        ToolParam("path", "string", "relative file path inside project", required=True, min_len=1, max_len=300),
+        ToolParam("content", "string", "text content to write", required=True, max_len=50_000),
     ]
 
     def run(self, path: str = "", content: str = "", **_: Any) -> ToolResult:
