@@ -1,0 +1,205 @@
+// Barre compacte : nom du personnage actif + boutons icônes vers les dialogs.
+import { useI18n } from '../i18n'
+
+export type DialogKind = 'chats' | 'characters' | 'memory' | 'import' | 'inspector' | 'settings'
+
+interface Props {
+  characterName: string
+  chatTitle: string
+  contextPercent: number | null // jauge de contexte (null = inconnue, rien d'affiché)
+  contextTitle: string // tooltip détaillé (~tokens / limite)
+  hasCharacter: boolean
+  hasChat: boolean
+  vnMode: boolean // mode visual novel actif (bascule d'affichage, pas un dialog)
+  vnHidden: boolean // boîte de dialogue VN masquée (la scène seule à l'écran)
+  onToggleVn: () => void
+  /** Masque/remet la boîte de dialogue VN — le « cacher le chat » de ce mode. */
+  onToggleHide: () => void
+  /** Bascule la recherche du fil (Ctrl+F rendu visible, et atteignable au doigt). */
+  onToggleSearch: () => void
+  onOpen: (d: DialogKind) => void
+}
+
+// Seuil d'auto-compaction, en % BRUT du contexte du modèle. Déclaré ici parce
+// que la jauge en dérive tout son affichage ; App.tsx l'importe pour déclencher.
+export const AUTO_COMPACT_AT = 80
+
+/**
+ * Jauge de contexte : petit badge accolé au titre de la conversation. Le %
+ * AFFICHÉ est la progression vers l'auto-compaction (100 % = elle se déclenche),
+ * pas le remplissage brut du modèle — plus lisible : l'utilisateur n'a pas à
+ * savoir que « 80 % » est le moment critique. Le tooltip, lui, garde les tokens
+ * réels. Au-delà de 100 % (compaction auto désactivée), le débordement s'affiche
+ * tel quel. Seul le TEXTE se colore, par palier sur le % affiché. Exportée parce
+ * que le mode VN masque la TopBar et rejoue la jauge dans sa boîte.
+ */
+export function CtxBadge({ percent, title }: { percent: number; title: string }) {
+  const { t } = useI18n()
+  const shown = Math.round((percent / AUTO_COMPACT_AT) * 100)
+  const tone = shown >= 85 ? 'ctx-high' : shown >= 50 ? 'ctx-warn' : 'ctx-ok'
+  return (
+    <span className={`ctx-badge ${tone}`} title={title}>
+      {t('contextBadge', { percent: shown })}
+    </span>
+  )
+}
+
+function Icon({ d, extra }: { d: string; extra?: React.ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+      {extra}
+    </svg>
+  )
+}
+
+export default function TopBar({
+  characterName,
+  chatTitle,
+  contextPercent,
+  contextTitle,
+  hasCharacter,
+  hasChat,
+  vnMode,
+  vnHidden,
+  onToggleVn,
+  onToggleHide,
+  onToggleSearch,
+  onOpen,
+}: Props) {
+  const { t } = useI18n()
+  const buttons: { kind: DialogKind; title: string; disabled: boolean; icon: React.ReactNode }[] = [
+    {
+      kind: 'chats',
+      title: t('chats'),
+      disabled: !hasCharacter,
+      icon: <Icon d="M4.5 5h15v11h-11l-4 3.5z" />,
+    },
+    {
+      kind: 'characters',
+      title: t('characters'),
+      disabled: false,
+      icon: (
+        <Icon
+          d="M3.8 19.5c.6-3.2 2.9-5 5.7-5s5.1 1.8 5.7 5"
+          extra={
+            <>
+              <circle cx="9.5" cy="8.2" r="3.3" />
+              <path d="M15.9 9.1a2.7 2.7 0 102.3 4.2M16.4 14.9c2.2.4 3.5 1.9 4 4.1" />
+            </>
+          }
+        />
+      ),
+    },
+    {
+      kind: 'memory',
+      title: t('memory'),
+      disabled: !hasCharacter,
+      icon: <Icon d="M5 19.5V6a2 2 0 012-2h12v14H7a1.8 1.8 0 000 3.6h12M8 8h7M8 11.5h5" />,
+    },
+    {
+      kind: 'import',
+      title: t('importMenu'),
+      disabled: false,
+      icon: <Icon d="M12 3.5V13m0 0l-3.8-3.8M12 13l3.8-3.8M4.5 16.5v2a2 2 0 002 2h11a2 2 0 002-2v-2" />,
+    },
+    {
+      kind: 'inspector',
+      title: t('promptInspectorTitle'),
+      disabled: !hasChat,
+      icon: (
+        <Icon
+          d="M2.5 12s3.6-6.2 9.5-6.2S21.5 12 21.5 12s-3.6 6.2-9.5 6.2S2.5 12 2.5 12z"
+          extra={<circle cx="12" cy="12" r="2.7" />}
+        />
+      ),
+    },
+    {
+      kind: 'settings',
+      title: t('settings'),
+      disabled: false,
+      // Roue dentée pleine (l'ancienne version « rayons + cercle » se lisait comme un soleil).
+      icon: (
+        <Icon
+          d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+          extra={<circle cx="12" cy="12" r="3" />}
+        />
+      ),
+    },
+  ]
+
+  return (
+    <header className="topbar">
+      {/* Ligne 1 : les icônes SEULES — huit boutons ne laissaient que des
+          miettes au nom du personnage. Ligne 2 : nom, titre du chat, jauge ;
+          c'est le titre qui se tronque en premier, le nom garde sa place. */}
+      <div className="topbar-main">
+        <nav aria-label={t('menus')}>
+          {/* Bascule d'affichage (pas un dialog) : boîte de dialogue VN par-dessus la scène. */}
+          <button
+            className="icon-btn"
+            title={t('vnMode')}
+            aria-label={t('vnMode')}
+            aria-pressed={vnMode}
+            onClick={onToggleVn}
+          >
+            <Icon
+              d="M5 5h14a2.5 2.5 0 012.5 2.5v9A2.5 2.5 0 0119 19H5a2.5 2.5 0 01-2.5-2.5v-9A2.5 2.5 0 015 5z"
+              extra={<path d="M6.8 13h10.4M6.8 16h6.6" />}
+            />
+          </button>
+          {/* Masquer le dialogue (mode VN seulement) : le geste classique des
+              visual novels — la scène seule à l'écran, le quick-menu reste pour
+              revenir. C'est le « cacher le chat » de ce mode, à côté de sa
+              bascule comme la poignée l'est de sa colonne. */}
+          {vnMode && (
+            <button
+              className="icon-btn"
+              title={vnHidden ? t('vnShowBox') : t('vnHideBox')}
+              aria-label={vnHidden ? t('vnShowBox') : t('vnHideBox')}
+              aria-pressed={vnHidden}
+              onClick={onToggleHide}
+            >
+              {/* La même boîte de dialogue que l'icône VN, barrée : « sans elle ». */}
+              <Icon
+                d="M5 5h14a2.5 2.5 0 012.5 2.5v9A2.5 2.5 0 0119 19H5a2.5 2.5 0 01-2.5-2.5v-9A2.5 2.5 0 015 5z"
+                extra={<path d="M5.5 18.5l13-13" />}
+              />
+            </button>
+          )}
+          {/* Loupe : Ctrl+F reste, mais il lui fallait un accès visible — surtout
+              au doigt, où le raccourci n'existe pas. Absente en mode VN : la boîte
+              n'affiche qu'une réplique, il n'y a rien à y chercher. */}
+          {!vnMode && (
+            <button
+              className="icon-btn"
+              title={t('searchInChat')}
+              aria-label={t('searchInChat')}
+              disabled={!hasCharacter}
+              onClick={onToggleSearch}
+            >
+              <Icon d="M15.7 15.7l4.8 4.8" extra={<circle cx="10.5" cy="10.5" r="6.6" />} />
+            </button>
+          )}
+          {buttons.map((b) => (
+            <button
+              key={b.kind}
+              className="icon-btn"
+              title={b.title}
+              aria-label={b.title}
+              disabled={b.disabled}
+              onClick={() => onOpen(b.kind)}
+            >
+              {b.icon}
+            </button>
+          ))}
+        </nav>
+      </div>
+      <div className="topbar-sub">
+        <span className="topbar-name">{characterName}</span>
+        {chatTitle && <span className="topbar-title">{chatTitle}</span>}
+        {contextPercent !== null && <CtxBadge percent={contextPercent} title={contextTitle} />}
+      </div>
+    </header>
+  )
+}

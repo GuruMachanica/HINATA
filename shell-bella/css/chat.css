@@ -1,0 +1,80 @@
+/* HINATA Chat Feed & Messages - Strictly Under 65 LOC */
+.interaction-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  position: relative;
+}
+
+.interaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.interaction-header h1 {
+  font-size: 1.25rem;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.interaction-header h1 span {
+  color: var(--accent-cyan);
+  font-weight: 300;
+}
+
+.hud-time {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-feed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-feed::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 3px;
+}
+
+.message {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.message.user {
+  align-self: flex-end;
+  background: rgba(41, 121, 255, 0.2);
+  border-right: 3px solid var(--accent-blue);
+}
+
+.msg-sender {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}

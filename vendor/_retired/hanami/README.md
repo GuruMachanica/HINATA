@@ -1,0 +1,443 @@
+**English** | [Français](README.fr.md)
+
+# 🌸 Hanami
+
+**An ultra-light LLM chat companion with a 3D (VRM) avatar — local-first, transparent, mobile-ready.**
+
+> **🚧 Work in progress.** Hanami works — every feature below is real, measured and tested — but its
+> author is a perfectionist and this repository moves fast. Expect rough edges, frequent commits,
+> and things getting better week after week. Issues and feedback are welcome.
+
+![Six screenshots of Hanami, in two rows. Top row, the 3D scene on its own, chat panel cropped out:
+a boy in a white tunic with a large mechanical arm on his back, standing barefoot between the desks
+of a Japanese classroom; the same character sitting on a stool at a café counter, hands on his lap,
+a menu board behind him; the character in a small loft room with pink walls, a bunk bed and a desk
+with two monitors. Bottom row, the interface: the face-to-face view — the character on the left, a
+three-message conversation on the right; visual-novel mode — the character full-screen above a
+dialogue box reading "Watching the rain, mostly. Sit down — I'll keep you company until you're
+tired."; the 2D view — a flat portrait over a twilight-lake background, with the same conversation
+beside it.](docs/images/collage.jpg)
+
+<sub>Top row, the **3D scene** alone: **standing in the Japanese classroom** — 75 m², the room
+measured on import; **sat down at the café** by himself, in the living scene; **a small loft room**.
+Bottom row, the **interface**: **the face-to-face view**, avatar and conversation side by side;
+**visual-novel mode**, with its dialogue box and its column of menu icons; **the 2D view**, for a
+character with no 3D model at all — a portrait over a background image (that landscape was drawn for
+the screenshot; `backgrounds/` ships empty and is yours to fill). One shot at a time, full size, in
+[`docs/images/`](docs/images) — including [Settings ▸ Credits](docs/images/07-credits.jpg).
+Example character in every shot: **Seed-san** by **VirtualCast, Inc.** —
+[VRM Public License 1.0](https://vrm.dev/licenses/1.0/), from the
+[VRM Consortium samples](https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san);
+he ships with Hanami, see the [credits](#credits). The mechanical arm on his back is part of the
+model: it copies his left arm, by way of the rotation constraints the file carries.</sub>
+
+And the view you will actually live in — the character on one side, the conversation on the other:
+
+![The face-to-face view at full size. On the left, the 3D avatar down to the belt, lit from the
+front, against a deep violet gradient. On the right, the chat column: the character's name, the
+conversation title, then three messages — "Oh — hello. I wasn't expecting anyone this late.",
+"Couldn't sleep. What are you up to?", "Watching the rain, mostly. Sit down — I'll keep you company
+until you're tired." — and, at the bottom, the Regenerate and Continue buttons and the message
+box.](docs/images/04-face-to-face.jpg)
+
+Hanami is a minimal alternative to SillyTavern, built around one thing: talking to a
+character, and doing it well. No macro language, no forty nested menus, no hidden magic.
+
+## Principles
+
+1. **Your prompt, verbatim.** Whatever you write in the system prompt is sent to the backend
+   **unmodified**. The only things Hanami ever appends are blocks you can read yourself — the
+   memory block, the compaction summary, the current-time block — and the 🔍 *Prompt inspector*
+   shows the exact payload of your next message, token estimate included.
+2. **Local-first.** Everything lives in plain, readable files under `data/`: characters, chats,
+   memory, settings, interface preferences. No database, no cloud. The only outbound requests
+   Hanami makes go to the URLs you configure yourself (the LLM backend, and the TTS server if you
+   turn it on).
+3. **One character = one folder.** `data/characters/<id>/` holds `character.json`,
+   `system-prompt.md`, `memory/` and `chats/`. Copy it, share it, put it under version control.
+4. **The server remembers your screen.** Language, theme, visual-novel mode, panel sizes, camera
+   framing, last character and last conversation live in `data/ui.json` — so your setup follows you
+   from the desktop to the phone instead of staying in one browser.
+
+## Features
+
+### Conversation
+
+- 💬 Streaming chat with any **OpenAI-compatible** backend (llama.cpp, KoboldCpp, Ollama,
+  TabbyAPI, LM Studio, cloud APIs…). *Test connection* lists the models the backend announces as
+  clickable chips that fill the *Model* field — no more copying an exact id by hand.
+- 📊 **Context gauge** next to the conversation title, coloured by tier. 100% means "compaction
+  point reached" — not the raw model window (the tooltip shows the real token counts). It is
+  there from the moment the conversation opens (the server estimates the next payload without
+  generating anything), then follows the backend's real usage.
+- 🗜️ **Automatic compaction**, in the spirit of Claude Code's `/compact`: when the gauge reaches
+  100%, durable facts are saved to memory, then the older messages are condensed into one
+  summary that replaces them in the payload. The summary stays visible and **editable** in the
+  inspector — emptying it undoes the compaction. *Compact now* accepts an optional instruction.
+  The thread on screen is never touched.
+- 🔍 **Prompt inspector**: system prompt, full payload, summary — with a copy button.
+- 🧠 **Model thoughts**: a model that reasons out loud gets a collapsible block above its reply
+  (optional). The reasoning is never sent back to the backend.
+- ♻️ **Regenerate**, **Continue** (the last reply is extended in place), edit any message,
+  **reply to one** (the quote is written at the top of what you send — nothing hidden),
+  **pin** one message per conversation (a ribbon, purely visual, never in the payload), and
+  **Remember this** to file a message into the character's memory (`moments.md`).
+- 🎭 **Impersonate**: the button next to Send writes *your* next message for you, in your own
+  voice, continuing the conversation where you left it — dropped straight into the composer,
+  yours to edit before sending. It never sends on its own.
+- 🔀 **Reply variants**: regenerating overwrites nothing, it stacks. Two arrows ‹ › and an *n/m*
+  counter under the reply scroll through the versions; whichever one is on screen when you send
+  your next message is the one that stays.
+- 🎙️ **Dictation**: a microphone button in the input, present only when the browser can do it and
+  the page is served over HTTPS or from `localhost`.
+- 🔎 **Search the conversation**: Ctrl+F, or the magnifier in the bar for touch — match count,
+  previous/next, Esc to close.
+- 🕰️ **Sense of time** (optional): the date, the hour and the time elapsed since your last
+  message, injected as plain facts — visible in the inspector like everything else.
+- 🖼️ **Images** for vision models: detection from the backend (Ollama), or forced, or off. The
+  paperclip only exists when the model can actually read an image; pictures are resized in the
+  browser before they leave it, shown as thumbnails, and open full screen on click.
+- 💬 **First message**: several written greetings (one picked at random), or the model opens the
+  conversation, or you are asked which one each time.
+- 🗣️ **Text-to-speech** (optional): each finished reply is read out loud through an
+  OpenAI-compatible TTS server. *Test* reports what the server announces and lists its voices as
+  clickable chips; *Listen again* replays a line. While the audio plays, it drives the lips.
+  **Each character has its own voice** (and its own switch): the server is an app setting, the
+  voice belongs to the character.
+- 💌 **Spontaneous messages** (opt-in): while you are away, the character writes on their own —
+  after about 4 h, then 10 h, then 24 h, and finally, around 48 h, one understanding note before
+  going quiet until you come back. Four messages in all, never outside the hour range you set.
+
+### The avatar and the screen
+
+- 🧍 **3D VRM avatar**: animated idle (breathing, blinking), expressions driven by the model
+  through `[happy]`-style tags (filtered out of what you read), lipsync while it speaks — drop
+  your `.vrm` files into `vrm/`.
+  Drag to pan, wheel or pinch to zoom, right-click to rotate; the framing is remembered per
+  character **and per display mode**.
+- 💃 **Gesture animations (`.vrma`)**: a looping idle, a one-shot gesture when the character
+  expresses an emotion, and a talking idle while a reply is being written. The file name in `vrma/`
+  is the whole configuration — `idle`, the six emotion names (`happy`, `sad`, `angry`, `surprised`,
+  `relaxed`, `neutral`), a `-2`/`-3` suffix for variants picked at random, and a `world-` prefix for
+  the clips that belong to the 3D scene only (gaits, stops, held gestures, seated postures and
+  emotes) and are therefore never
+  even downloaded here; any other name is ignored. Breathing and head sway keep playing **on top** of
+  the animation, and the face stays the model's business. The clips shipped with the app are all
+  freely redistributable — see the [credits](#credits). Switch in *Settings > Appearance > Scene*.
+- 🎭 **Two body languages to pick from, per character**: two complete libraries that **never mix**
+  (their standing stances are too far apart to join up), chosen in the character's *Body language*
+  field — **Overte** by default, or **Rocketbox**, which brings a wider vocabulary and a
+  **listening idle**: the character shifts posture while you are typing your message. Walking and
+  sitting stay Overte's in both cases, the living scene existing only there.
+- 🏠 **3D environment**: a `.glb` room from `environments/`, placed around the avatar instead of the
+  2D background — chosen per character, with an optional `.json` sidecar for scale, rotation, spawn
+  point and exposure. An environment whose floor is not at the model origin no longer puts the
+  character **under its own floor**: with no spawn point written down, the analysis looks for a
+  walkable one and finds it. Switch in *Settings > Appearance > Scene*.
+- 🚶 **Living scene**: the character inhabits the room — turning to face you, walking around on its
+  own, sitting on whatever it finds, and replying seated if you write at that moment. A click on the
+  floor sends it there, a click on a seat makes it sit, a click on the character makes it nod — a
+  hint says so once, on the first living scene; its eyes follow the camera. Any environment dropped into `environments/` is **measured automatically on
+  import** (walkable floor, obstacles, seats — see
+  [`environments/README.md`](environments/README.md)): no manual preparation, and inverse kinematics
+  puts the feet on the real floor and the pelvis on the real seat, whatever its height. Large
+  screens only; switch in *Settings > Appearance > Scene*, off by default.
+- 🎬 **Visual novel mode**: full-screen scene, a dialogue box with a namebox, the time of the line,
+  the conversation title and the context gauge in its lower band, a resizable box (grip in the
+  top-left corner, double-click to reset) and the menu icons in a column in the top-right corner.
+  Esc leaves the mode.
+- 🖥️ **Adjustable layout**: the chat column (desktop) and the visual-novel box are resized by
+  discreet grips; a double-click forgets the size. One single ⟲ button — *Reset the layout* —
+  re-frames the avatar of the current mode and gives the panels their default sizes back.
+- 🎨 **Themes**: five complete palettes (Sakura, Midnight, Matcha, Ember, Ink) plus **Custom** —
+  two colours, all the shading derived from them, and a shareable code (`#background #accent`) to
+  paste from one instance to another. A character can carry its own theme, which takes over the
+  whole interface while it is active.
+- 🌄 **Backgrounds**: picked from `backgrounds/`, and added straight from the interface (png, jpg,
+  webp) — no need to reach the server's file explorer.
+- 🖼️ **2D portrait**: a character imported from a SillyTavern card keeps the card's image, which
+  stands in as the avatar until you pick a `.vrm`.
+
+### Memory and tools
+
+- 🧠 **Persistent memory**: markdown files injected into the context, plus tools
+  (`memory_save`, `memory_read`, `memory_update`, `memory_delete`) so the character can
+  remember on its own — with a built-in editing panel. `MEMORY.md` is the index.
+- 🔦 **`chat_search`**: the model can search **all** past conversations with you (full
+  transcripts, not just its distilled memory) and quote the exact passage with its date.
+- 🔍 **Web search**: the model can search the Web on its own (`web_search`) when a question
+  calls for it, or you can force one with `/search <query>` in the composer. Three engines,
+  picked in *Settings > Features > Web search*: **DuckDuckGo** (default, no setup, occasionally
+  rate-limited), **SearXNG** (the most private and reliable — an in-app step-by-step guide covers
+  the Docker install), or **Tavily** (a free API key). Results appear as a small chip in the
+  thread: click the magnifying glass to unfold the full titles, links and snippets, or delete the
+  chip like any message.
+- 🛠️ Optional **file tools** for the model (`list_files`, `read_file`, `write_file`,
+  `edit_file`, and `delete_file` behind its own dedicated toggle), sandboxed to a folder you pick.
+- 🐣 **Model mode**: *Full* exposes the tools; *Simple* exposes **none** — Hanami injects the
+  memory itself, extracts the durable facts server-side during compaction, and guesses the emotion
+  from the text. Made for small models, whose weak spot is tool calling.
+
+### Conversations, characters, data
+
+- 🏷️ **Conversation titles have two states**: automatic (re-rendered in the interface language) or
+  chosen by you (rename, forked branch) — a chosen title is never translated. Renaming happens
+  inline, from the pencil in the list.
+- 🌿 **Fork**: duplicate a conversation into an independent branch with the same past (compaction
+  summary included). The original is never touched.
+- 💗 **Our story**: a line at the bottom of the conversation list — days together, messages, days
+  of conversation.
+- 📥 **SillyTavern import**: character cards (PNG V2/V3, `alternate_greetings` becoming greeting
+  variants) and chat logs (`.jsonl`).
+- 💾 **Backup and restore** (*Settings > Features > Data*): a `.zip` of the whole of `data/` and the
+  portraits — conversations, memory, prompts, settings, screen preferences. Restoring first shows
+  what it would change, and **archives the current state** into `backups/` before writing anything:
+  nothing is ever lost without a net. 3D models, backgrounds, environments and animations are not
+  in it — they are not data.
+- 📱 **Mobile / PWA**: responsive interface, installable on your home screen.
+- 🔒 Optional password (recommended if you expose Hanami through a Cloudflare Tunnel).
+
+## Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+Open <http://localhost:7788>. In ⚙️ *Settings*, fill in your backend URL
+(KoboldCpp, for example: `http://127.0.0.1:5001/v1`) and hit *Test connection*.
+
+No backend at hand? `npm run mock-llm` starts a fake OpenAI-compatible backend on port 5199
+(`http://127.0.0.1:5199/v1`), enough to see streaming, emotions and the avatar in action.
+
+### Production
+
+```bash
+npm run build
+npm start
+```
+
+The server listens on port `7788` by default; set the `PORT` environment variable to change it.
+
+### Developer tools
+
+`devtools/` holds the animation test bench used to pick and tune the `.vrma` clips: it replays them
+on a real model, measures how they join up with the idle pose, and renders contact sheets that show
+what a clip actually looks like. Start it with the app running — double-click
+`devtools/LANCER-LE-BANC.cmd` on Windows, or `node devtools/anim-lab/serve.mjs` elsewhere — then
+open <http://localhost:7799>. Details in [`devtools/README.md`](devtools/README.md).
+
+## Settings
+
+Three tabs, one single form — switching tabs neither loses nor saves anything:
+
+- **Appearance** — interface language, theme (and the custom theme's two colours), scene (3D
+  environment, gesture animations, living scene).
+- **Model** — backend URL, API key, model, images (vision), temperature, max tokens, history
+  length, model context size, model mode, automatic compaction.
+- **Features** — sense of time, thoughts, text-to-speech, spontaneous messages, memory, file
+  tools, sandbox folder, web search, access password, data backup and restore.
+
+Language and theme apply immediately; everything else takes effect when you save.
+
+## Language / Langue
+
+- **Interface**: Hanami ships in English and French. Switch language in ⚙️ *Settings* — it only
+  changes the app's own labels, nothing else.
+- **The character**: your character replies in the language of **its own system prompt**. Hanami
+  never injects a language instruction, so nothing is imposed: if you want English, write the
+  prompt in English; if you want French, write it in French. The prompt decides.
+
+## Remote & mobile access
+
+- `npm run dev` listens on `127.0.0.1` only (the Vite tooling has no business on your network).
+  Use `HOST=0.0.0.0 npm run dev` to open it up, or `npm start`, which listens on the LAN and prints
+  the address on startup: `http://<pc-ip>:7788`.
+- From anywhere else: see [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) (Cloudflare Tunnel, free HTTPS).
+- Installing it on a phone: see [docs/MOBILE.md](docs/MOBILE.md).
+
+## Privacy
+
+- **`data/` is never committed** (see `.gitignore`). Your chats, memory files, edited prompts,
+  interface preferences and `config.json` — including the API key and password you may have set —
+  stay on your disk only. Neither is `backups/`, where the pre-restore archives land: same
+  contents.
+- **VRM models, backgrounds and portraits are never committed either**: `vrm/`, `backgrounds/` and
+  `portraits/` are git-ignored except for their `README.md` — and for the single example avatar,
+  `vrm/Seed-san.vrm`, whose licence explicitly allows redistribution (the proof, copied out of the
+  file itself, sits next to it in `vrm/Seed-san.LICENCE.txt`). Most VRoid Hub / Booth models forbid
+  redistribution, so for anything else each user brings their own.
+- **`environments/` and `vrma/` are tracked on purpose**: everybody should get the same scene, so
+  only freely redistributable assets go there. Animations and environments are credited in the
+  [credits](#credits); the file-by-file legal detail is in `vrma/NOTICE.md` and
+  `environments/CREDITS.md`.
+- `presets/hana/` is the only character shipped with the repository — an example written to be
+  nobody's in particular, bilingual, wearing the example avatar so that a fresh install has
+  something to show on the very first launch (swap it for yours in one dropdown). On first
+  launch, every folder in `presets/` is copied into `data/characters/` and never overwritten
+  afterwards — so editing your character never touches the repo, and pulling never touches your
+  character. Your own presets stay local: everything under `presets/` is git-ignored but `hana/`.
+- Setting a password protects every `/api/` route (bar the login itself); changing it revokes the
+  existing sessions. Mutating requests coming from another site are refused.
+
+## Project layout
+
+```
+data/                  # YOUR data (never committed)
+  config.json          # settings
+  ui.json              # interface preferences (language, theme, layout, last conversation)
+  characters/<id>/     # one folder per character
+    character.json     # name, 3D model, portrait, background, environment, theme, greetings
+    system-prompt.md   # THE prompt — edit it freely
+    memory/            # MEMORY.md (index) + one fact per file
+    chats/             # one .jsonl per conversation
+backups/               # pre-restore archives (never committed, never purged)
+presets/               # characters shipped with the app (copied into data/ on first launch)
+vrm/                   # your .vrm models (+ Seed-san.vrm, the example avatar, committed)
+backgrounds/           # your background images
+portraits/             # 2D portraits from imported cards (avatar without a VRM)
+environments/          # 3D rooms (.glb) and their optional placement sidecars
+vrma/                  # humanoid animations (.vrma) — freely licensed, shipped with the app
+vrma/extra/            # converted clips that were not kept — never loaded (see vrma/README.md)
+client/                # React front-end (Vite)
+server/                # Express server + API
+shared/                # types shared by client and server
+docs/                  # remote access and mobile guides, and the README's screenshots
+scripts/               # mock-llm (fake OpenAI-compatible backend)
+devtools/              # animation test bench and biomechanical diagnosis (not part of the app)
+```
+
+## Credits
+
+Hanami would not exist without other people's work. Everything is gathered here — **including what
+no licence obliges us to name**, because a credit that is hidden honours nobody.
+
+### Animations
+
+- **[Overte](https://github.com/overte-org/overte)** — *Apache-2.0*. **111 of the 151 clips** in the
+  active library (plus the 15 spare clips in `vrma/extra/`, also all Overte), and by
+  far the primary source: **the whole face-to-face mode of the default family** — five idle
+  animations, five "talking"
+  idles, and twenty-one gestures (`neutral`, `happy` ×4, `sad`, `angry` ×2, `relaxed` ×3, `nod` ×5,
+  `shake`, `think` ×2, `raise-hand` ×2) — plus all of the 3D scene's locomotion, held gestures and
+  seated postures: twenty gaits, five stops, turns, start, standing posture changes, held gestures
+  split into intro-hold-outro, and the complete seated vocabulary (holds, talking,
+  micro-variations, turns, agreement, disagreement, joy, pointing, raised hand). Overte's
+  **animation graph** ships with them under the same licence (`vrma/transitions.json`): 34 state
+  machines, 165 states, 392 transitions — an avatar's behaviour logic, already solved. These are
+  neither raw capture nor recycled Mixamo: they were **hand-made in Maya** by an animator on staff
+  at High Fidelity, and that animator's care is what shows — the fingers are animated, the poses
+  join up with each other, and the loops close. Copyright High Fidelity (2013-2019), Vircadia
+  contributors (2019-2021), Overte e.V. (2022-2026).
+
+  Hanami also takes from Overte, **ported to TypeScript**, the heart of its character-animation
+  engine: the two-bone inverse kinematics and the knee pole vector, the table of human joint limits
+  (per-bone swing/twist constraints), the gaze system — saccades, target moved only while the eye is
+  closed, the conversation probability table —, the relaxed-hand and fist pose sets, and the math
+  toolbox that carries it all. The files concerned keep the original copyright notice and the
+  modification statement required by Apache-2.0 §4(b); the full record is in
+  [`NOTICE.md`](NOTICE.md). Original authors of the ported code: Anthony J. Thibault, Andrew
+  Meadows, Angus Antley, Luis Cuenca, Howard Stearns, Seth Alves, Stephen Birarda, Mark Peng.
+  Without them this engine would not exist.
+- **[Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox)** — *MIT*, © Microsoft
+  Corporation (2020). **38 clips**, the **second face-to-face family** (`rb-` prefix): four idles,
+  three "talking" idles, **three listening bases** — a role Overte does not have at all, played
+  while you are typing — and twenty-eight gestures (`happy` ×3, `neutral` ×5, `relaxed` ×4, `angry`
+  ×2, `sad`, plus six conversation primitives held in reserve). A family is chosen per character and
+  **never mixes** with the other: the cross-family seam measures 16.5 to 20.3 cm, two and a half
+  times the acceptance threshold. The converter and its plan ship with the clips
+  ([`scripts/convert-rocketbox.mjs`](scripts/convert-rocketbox.mjs)) along with the pinned source
+  commit: the 38 clips can be rebuilt byte for byte. MIT requires the copyright notice to accompany
+  any redistribution — it is in [`vrma/NOTICE.md`](vrma/NOTICE.md) §4. A good-faith request to
+  confirm that the animations fall under the repository's MIT licence was filed upstream
+  ([issue #24](https://github.com/microsoft/Microsoft-Rocketbox/issues/24)) and is still open; it
+  is kept here as a record, not as a condition of the licence.
+- **[Quaternius](https://quaternius.com)**, *Universal Animation Library* — *CC0 1.0*, public
+  domain, **no attribution required**: we give it anyway. Two clips, the one family Overte does not
+  have: sitting down and standing up. Both ends of each were anchored onto the neighbouring poses so
+  that the seated sequence closes (see [`vrma/NOTICE.md`](vrma/NOTICE.md)). The three beats of a jump
+  came from the same pack; they were **removed** for failing to join up — neither Quaternius's nor
+  Overte's version does, Overte's airborne phase being three poses driven by the physics engine
+  rather than an animation.
+- **[CMU Graphics Lab Motion Capture Database](https://mocap.cs.cmu.edu)**, "Daz-friendly" BVH
+  conversion by **Bruce Hahne / cgspeed** (<https://www.cgspeed.com>). This database supplied
+  fifteen emotion gestures to the library's first version; **no file derives from it any more** —
+  measured, every one of them snagged on the way back to the idle, so six were replaced by Overte
+  animations and nine removed (see [`vrma/NOTICE.md`](vrma/NOTICE.md)). The credit stays here
+  because the work served, and so does the acknowledgement the database requires:
+
+  > The data used in this project was obtained from mocap.cs.cmu.edu.
+  > The database was created with funding from NSF EIA-0196217.
+
+### 3D environments
+
+Seven interior rooms, all under **CC BY 4.0** — the only licence in this project that *requires*
+attribution. Via [Sketchfab](https://sketchfab.com):
+
+- "**Anime Class Room**" by **AnixMoonLight** ([profile](https://sketchfab.com/ani111)) — the
+  classroom.
+- "**Cute Isometric Room ✿**" by **JaDe.Dfr** ([profile](https://sketchfab.com/JaDe.Dfr)) — the cosy
+  loft.
+- "**Rustic Bedroom**" by **Bársh** ([profile](https://sketchfab.com/borsh_and)) — the rustic
+  bedroom.
+- "**Low Poly Restaurant Interior Scene**" by **GameAssetsFin**
+  ([profile](https://sketchfab.com/MarkoJantti)) — the restaurant.
+- "**Small Cafe**" by **dylanheyes** ([profile](https://sketchfab.com/dylanheyes)) — the café.
+- "**Japanese Classroom**" by **T I A N** ([profile](https://sketchfab.com/Tian96)) — the large
+  Japanese classroom.
+- "**apartment floor plan**" by **SrMonteiro**
+  ([profile](https://sketchfab.com/crispimrafael)) — the cutaway apartment.
+
+### Example avatar
+
+- "**Seed-san**" by **VirtualCast, Inc.** — *VRM Public License 1.0*
+  ([licence](https://vrm.dev/licenses/1.0/),
+  [model](https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san)). The only 3D
+  model shipped with Hanami: it is what Hana wears on first launch, and what every screenshot above
+  shows. It is here because it is one of the very few good-looking VRM models that may legally be
+  **redistributed** — its licence settings, written inside the file and readable by anyone, say
+  `allowRedistribution: true` and `modification: allowModificationRedistribution`, where nearly
+  every free VRoid Hub / Booth model allows use but forbids redistribution. The same settings carry
+  `creditNotation: required`: this credit is not a courtesy, it is the condition. The file is
+  shipped byte for byte as published, and the terms are copied out in
+  `vrm/Seed-san.LICENCE.txt`.
+
+### Typeface
+
+- **[Mulish](https://github.com/googlefonts/mulish)**, by The Mulish Project Authors — *SIL Open
+  Font License 1.1* (full text: `client/public/fonts/OFL-Mulish.txt`). Every piece of type in the
+  interface. The OFL does not require attribution in documentation: we give it anyway.
+
+### Code
+
+None of the following requires being named. All of it is named anyway.
+
+- **[vrm-c/bvh2vrma](https://github.com/vrm-c/bvh2vrma)** — *MIT*, VRM Consortium. Its converters
+  were the reference we wrote ours against: our understanding of how to write the
+  `VRMC_vrm_animation` extension and how to handle hip translation comes from there.
+- **[three.js](https://threejs.org)** (*MIT*, mrdoob and contributors) — all of the 3D rendering.
+- **[@pixiv/three-vrm](https://github.com/pixiv/three-vrm)** and **@pixiv/three-vrm-animation**
+  (*MIT*, pixiv) — VRM model loading, the normalised humanoid rig and `.vrma` playback. Without them
+  there is no avatar.
+- **[React](https://react.dev)** (*MIT*) — the interface. **[Express](https://expressjs.com)**
+  (*MIT*, TJ Holowaychuk) — the server. **[Vite](https://vite.dev)** (*MIT*, Evan You) — the build
+  and the dev server. **[TypeScript](https://www.typescriptlang.org)** (*Apache-2.0*, Microsoft) and
+  **[tsx](https://github.com/privatenumber/tsx)** (*MIT*, Hiroki Osame) — the language and running
+  it directly on the server.
+
+The legal detail — file-by-file mapping, full licence notices, mentions to preserve when
+redistributing — lives in [`vrma/NOTICE.md`](vrma/NOTICE.md) for the animations and
+[`environments/CREDITS.md`](environments/CREDITS.md) for the environments. This section gives the
+credit; those two files document it.
+
+## License
+
+AGPL-3.0. VRM models and images are not included — respect the license of every model you use. The
+`.vrma` animations of `vrma/` and the environments of `environments/` come with their own licences:
+see the [credits](#credits) above.
+
+## Support
+
+Hanami is free and always will be — no paywall, no premium tier, ever. If it brings you something
+and you feel like leaving a tip, there is a [Ko-fi](https://ko-fi.com/undiai). It helps its author
+more than you would guess. 🌸

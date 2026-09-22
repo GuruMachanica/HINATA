@@ -1,0 +1,104 @@
+{
+  "name": "avatar",
+  "private": true,
+  "version": "0.8.0",
+  "description": "AVATAR — VRM companion with VRMA motion and real-time lip sync",
+  "author": "ARPA Hellenic Logical Systems <input@arpacorp.net>",
+  "homepage": "https://github.com/ARPAHLS/avatar",
+  "license": "MIT",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "dev:desktop": "concurrently -n vite,electron -c cyan,magenta -k \"vite --port 5173 --strictPort\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "thumbs": "concurrently -n vite,electron -c cyan,magenta -k --success first \"vite --port 5174 --strictPort\" \"wait-on http://localhost:5174 && cross-env AVATAR_GEN_THUMBS=1 VITE_DEV_SERVER_URL=http://localhost:5174 electron .\"",
+    "desktop": "npm run build && cross-env NODE_ENV=production electron .",
+    "build": "vite build",
+    "icons": "node scripts/make-icons.mjs",
+    "test": "node --test electron/*.test.cjs scripts/*.test.mjs \"src/**/*.test.mjs\"",
+    "dist:win": "npm run icons && vite build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win nsis",
+    "lint": "eslint . --max-warnings=0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@pixiv/three-vrm": "^3.4.2",
+    "@pixiv/three-vrm-animation": "^3.4.2",
+    "@react-three/drei": "^10.5.2",
+    "@react-three/fiber": "^9.2.0",
+    "js-yaml": "^5.2.3",
+    "lucide-react": "^1.28.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.178.0",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.30.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "png-to-ico": "^3.0.2",
+    "resedit": "^3.0.2",
+    "vite": "^7.0.4",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "net.arpacorp.avatar",
+    "productName": "AVATAR",
+    "copyright": "Copyright © ARPA Hellenic Logical Systems",
+    "directories": {
+      "output": "../desktop-setup",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "src/lib/stageCommands.js",
+      "src/config/animationLookup.js",
+      "src/config/environmentSelection.js",
+      "public/AVATAR_LOGO_150.png",
+      "package.json"
+    ],
+    "asar": true,
+    "afterPack": "./scripts/afterPack.cjs",
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "AVATAR-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeader": "build/installer_top.bmp",
+      "installerSidebar": "build/installer_side.bmp",
+      "uninstallerSidebar": "build/installer_side.bmp",
+      "license": "build/installer-license.txt",
+      "include": "build/installer.nsh",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AVATAR",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

@@ -1,0 +1,55 @@
+/* HINATA Voice & Mic UI Styling - Strictly Under 60 LOC */
+.mic-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--glass-border);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mic-btn:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.mic-btn.active {
+  background: rgba(0, 229, 255, 0.15);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 14px var(--accent-glow);
+  animation: pulseMic 1.5s infinite;
+}
+
+.voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+  margin-left: 8px;
+}
+
+.wave-bar {
+  width: 3px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+.avatar-ring.barge-in {
+  border-color: #ff5252 !important;
+  box-shadow: 0 0 20px rgba(255, 82, 82, 0.5);
+  animation: none;
+}
+
+@keyframes pulseMic {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}

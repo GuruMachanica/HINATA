@@ -1,0 +1,23 @@
+# HINATA Companion - Hermes Core Configuration
+# Synchronized with ~/.hermes/config.yaml
+
+model:
+  default: "dolphin3"
+  provider: "ollama"
+  base_url: "http://127.0.0.1:11434/v1"
+  api_key: "ollama"
+  streaming: true
+
+# Safety Policy & Toolset Configuration
+tools:
+  # Enable diagnostics, terminal inspection, filesystem tools
+  enabled:
+    - "system_stats"
+    - "filesystem"
+    - "terminal"
+    - "skills"
+
+companion:
+  name: "HINATA"
+  persona: "soul.md"
+  vram_budget_mb: 5500

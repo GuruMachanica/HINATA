@@ -1,0 +1,47 @@
+/* HINATA Base Styling & Design Tokens - Under 100 LOC */
+:root {
+  --bg-deep: #080a0f;
+  --bg-surface: rgba(16, 20, 31, 0.75);
+  --glass-border: rgba(64, 128, 255, 0.15);
+  --glass-shine: rgba(255, 255, 255, 0.05);
+  --accent-cyan: #00e5ff;
+  --accent-blue: #2979ff;
+  --accent-glow: rgba(0, 229, 255, 0.35);
+  --text-primary: #e6edf3;
+  --text-muted: #8b949e;
+  --status-online: #00e676;
+  --status-thinking: #ffab00;
+  --status-speaking: #00e5ff;
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(41, 121, 255, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(0, 229, 255, 0.08) 0%, transparent 45%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.glass-card {
+  background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}

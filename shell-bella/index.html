@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HINATA - Autonomous AI Desktop Companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/avatar_stage.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/input_dock.css">
+  <link rel="stylesheet" href="css/voice.css">
+</head>
+<body>
+  <div class="companion-shell">
+    <aside class="avatar-panel glass-card">
+      <header class="panel-header">
+        <div class="status-indicator">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">ONLINE</span>
+        </div>
+        <span class="badge" id="model-badge">Hermes · dolphin3</span>
+      </header>
+
+      <div class="avatar-stage" id="avatar-stage">
+        <div class="avatar-tools" id="avatar-tools">
+          <select id="anim-select" class="tool-chip"><option value="">🎬 Animations...</option></select>
+          <button type="button" id="fs-btn" class="tool-chip">⛶ Stage</button>
+        </div>
+        <div class="avatar-ring" id="avatar-ring"></div>
+        <div id="avatar-canvas-wrap"></div>
+      </div>
+
+      <div class="telemetry-bar">
+        <div class="metric">
+          <span class="metric-label">Brain</span>
+          <span class="metric-val" id="brain-metric">Hermes Agent</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Model</span>
+          <span class="metric-val" id="model-metric">dolphin3 (local)</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="interaction-panel glass-card">
+      <header class="interaction-header">
+        <h1>HINATA <span>CORTEX</span></h1>
+        <div class="hud-time" id="hud-clock">00:00:00</div>
+      </header>
+
+      <section class="chat-feed" id="chat-feed" aria-live="polite">
+        <div class="message assistant">
+          <div class="msg-sender">HINATA</div>
+          <div class="msg-content">Hermes cortex online. VRM embodiment ready. Local dolphin3 model standing by.</div>
+        </div>
+      </section>
+
+      <form id="input-form" class="input-dock">
+        <button type="button" class="mic-btn" id="mic-btn" aria-label="Toggle Voice Input">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+        </button>
+        <input type="text" id="user-input" placeholder="Speak or type instruction for HINATA..." autocomplete="off" required />
+        <button type="submit" id="send-btn" aria-label="Send message">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <!-- Legacy non-module scripts (chat/mic/speech/ws/ui) -->
+  <script src="js/speech_player.js"></script>
+  <script src="js/mic_controller.js"></script>
+  <script src="js/ws_client.js"></script>
+  <script src="js/ui_controller.js"></script>
+
+  <!-- Import map: three + @pixiv/three-vrm from CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.4.2/lib/three-vrm.module.min.js",
+      "@pixiv/three-vrm-animation": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-animation@3.4.2/lib/three-vrm-animation.module.min.js"
+    }
+  }
+  </script>
+
+  <!-- ES module entry -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

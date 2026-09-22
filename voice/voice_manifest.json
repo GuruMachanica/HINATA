@@ -1,0 +1,17 @@
+{
+  "voice_id": "hinata_warm",
+  "engine": "kokoro",
+  "default_voice": "af_heart",
+  "fallback_voice": "af_bella",
+  "parameters": {
+    "gender": "female",
+    "age_impression": "25-30",
+    "accent": "neutral-international",
+    "style": "calm, articulate, authoritative executive",
+    "pitch": 0.0,
+    "speed": 1.0,
+    "energy": 0.65
+  },
+  "commercial_use": true,
+  "attribution_required": false
+}

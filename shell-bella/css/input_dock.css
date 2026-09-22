@@ -1,0 +1,44 @@
+/* HINATA Input Dock & Keyframes - Strictly Under 65 LOC */
+.input-dock {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+  padding: 6px 12px;
+}
+
+.input-dock input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.input-dock button {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.input-dock button:hover {
+  background: var(--accent-cyan);
+  transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

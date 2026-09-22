@@ -1,0 +1,3811 @@
+/* Hanami — thème sombre sakura, mobile-first. Aucune lib CSS. */
+
+/* Police de la boîte visual novel : Mulish (variable 200-1000, sous-ensemble
+   latin, ~30 Ko), l'alternative LIBRE (SIL OFL, licence à côté du fichier) à
+   l'Aller de Doki Doki Literature Club — même squelette humaniste chaleureux.
+   Servie localement : aucune requête externe. */
+@font-face {
+  font-family: 'Mulish';
+  src: url('/fonts/mulish-latin.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Widgets NATIFS en sombre (liste déroulante des <select>, autofill…) —
+     sans ça, le navigateur ouvre des popups blancs illisibles sur notre thème. */
+  color-scheme: dark;
+  --bg: #171221;
+  --bg-2: #211a30;
+  --accent: #f5a3c7;
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-ink: #241322;
+  --text: #ece7f2;
+  --text-dim: rgba(236, 231, 242, 0.55);
+  --panel: rgba(23, 18, 33, 0.68);
+  --panel-strong: rgba(28, 22, 42, 0.94);
+  --border: rgba(236, 231, 242, 0.12);
+  --danger: #ff7a90;
+  --ok: #7fe0b2;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace;
+  /* Fond de scène (mode sans décor 3D) — deux halos + un dégradé de base. */
+  --scene-bg:
+    radial-gradient(1200px 800px at 70% 18%, #2c2142 0%, transparent 55%),
+    radial-gradient(900px 700px at 18% 85%, #251a3a 0%, transparent 60%),
+    linear-gradient(160deg, #1e1731 0%, #171221 60%, #110d19 100%);
+}
+
+/* ── Thèmes préfaits ──────────────────────────────────────────────────────
+   Chaque thème redéfinit la base ; tout le reste (accent-soft, bordures roses,
+   scrollbars…) suit automatiquement via color-mix(var(--accent)).
+   Défaut sans data-theme = Sakura (les valeurs ci-dessus). */
+
+:root[data-theme='minuit'] {
+  --bg: #0f1420;
+  --bg-2: #182238;
+  --accent: #8fc1ee;
+  --accent-ink: #10202e;
+  --panel: rgba(15, 20, 32, 0.68);
+  --panel-strong: rgba(20, 27, 44, 0.94);
+  --scene-bg:
+    radial-gradient(1200px 800px at 70% 18%, #1d2a45 0%, transparent 55%),
+    radial-gradient(900px 700px at 18% 85%, #16223a 0%, transparent 60%),
+    linear-gradient(160deg, #141d31 0%, #0f1420 60%, #0a0e17 100%);
+}
+
+:root[data-theme='matcha'] {
+  --bg: #111a13;
+  --bg-2: #1a2a1e;
+  --accent: #a5d9a7;
+  --accent-ink: #122014;
+  --panel: rgba(14, 21, 15, 0.68);
+  --panel-strong: rgba(19, 29, 21, 0.94);
+  --scene-bg:
+    radial-gradient(1200px 800px at 70% 18%, #24382a 0%, transparent 55%),
+    radial-gradient(900px 700px at 18% 85%, #1c2f22 0%, transparent 60%),
+    linear-gradient(160deg, #18271c 0%, #111a13 60%, #0b120d 100%);
+}
+
+:root[data-theme='braise'] {
+  --bg: #1a1210;
+  --bg-2: #2a1d18;
+  --accent: #f0b183;
+  --accent-ink: #26160e;
+  --panel: rgba(23, 15, 12, 0.68);
+  --panel-strong: rgba(33, 22, 17, 0.94);
+  --scene-bg:
+    radial-gradient(1200px 800px at 70% 18%, #3a2620 0%, transparent 55%),
+    radial-gradient(900px 700px at 18% 85%, #2f1f1a 0%, transparent 60%),
+    linear-gradient(160deg, #2a1c16 0%, #1a1210 60%, #120c0a 100%);
+}
+
+/* Thème PERSO : deux couleurs choisies par l'utilisateur (--custom-bg /
+   --custom-accent, posées en inline par themes.ts) — tout le reste est dérivé,
+   avec le même soin de shading que les thèmes préfaits. */
+:root[data-theme='custom'] {
+  --bg: var(--custom-bg, #1a1030);
+  --bg-2: color-mix(in srgb, var(--custom-bg, #1a1030) 90%, white);
+  --accent: var(--custom-accent, #a0e8d8);
+  --accent-ink: color-mix(in srgb, var(--custom-accent, #a0e8d8) 25%, black);
+  --panel: color-mix(in srgb, var(--custom-bg, #1a1030) 68%, transparent);
+  --panel-strong: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--custom-bg, #1a1030) 92%, white) 94%,
+    transparent
+  );
+  --scene-bg:
+    radial-gradient(
+      1200px 800px at 70% 18%,
+      color-mix(in srgb, var(--custom-bg, #1a1030) 78%, var(--custom-accent, #a0e8d8)) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 700px at 18% 85%,
+      color-mix(in srgb, var(--custom-bg, #1a1030) 88%, var(--custom-accent, #a0e8d8)) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--custom-bg, #1a1030) 92%, white) 0%,
+      var(--custom-bg, #1a1030) 60%,
+      color-mix(in srgb, var(--custom-bg, #1a1030) 78%, black) 100%
+    );
+}
+
+:root[data-theme='encre'] {
+  --bg: #121214;
+  --bg-2: #1c1c20;
+  --accent: #c9c9d4;
+  --accent-ink: #1a1a1e;
+  --panel: rgba(16, 16, 18, 0.68);
+  --panel-strong: rgba(24, 24, 27, 0.94);
+  --scene-bg:
+    radial-gradient(1200px 800px at 70% 18%, #232329 0%, transparent 55%),
+    radial-gradient(900px 700px at 18% 85%, #1d1d22 0%, transparent 60%),
+    linear-gradient(160deg, #1c1c21 0%, #121214 60%, #0c0c0e 100%);
+}
+
+/* ── Tailles réglables (poignées) ─────────────────────────────────────────
+   --chat-panel-w, --vn-box-w et --vn-text-h sont posées sur :root par
+   client/src/layout.ts quand l'utilisateur a réglé un panneau à la poignée.
+   ABSENTES le reste du temps : chaque var() porte son défaut en repli, et le
+   double-clic sur une poignée les retire (retour à ces défauts).
+   Le bornage est écrit DEUX fois — ici pour survivre à un redimensionnement de
+   la fenêtre, en JS pour ce qui est enregistré. */
+
+:root {
+  /* Largeur effective de la colonne de chat (au-delà de 900 px) : la colonne ET
+     le portrait 2D lisent cette même valeur. */
+  --chat-col-w: clamp(320px, var(--chat-panel-w, 420px), 60vw);
+  /* Largeur effective de la boîte de dialogue VN. Ses trois sections (dialogue,
+     saisie, bande basse) la partagent : c'est ce qui les garde solidaires. Le
+     100 % se résout chez l'élément qui l'utilise — les trois sont frères. */
+  --vn-w: min(max(520px, var(--vn-box-w, 900px)), calc(100% - 28px));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Ceinture en plus de color-scheme : les items des listes déroulantes suivent
+   le thème même sur les navigateurs qui les peignent eux-mêmes. */
+select option {
+  background-color: var(--bg-2);
+  color: var(--text);
+}
+
+/* Le POPUP du <select> est rendu hors de la page : nos styles de scrollbar ne
+   l'atteignent jamais — sa barre suit le color-scheme de l'ÉLÉMENT. L'héritage
+   depuis :root doit suffire en théorie, mais certains Chrome/Windows consultent
+   la valeur posée sur le select lui-même : on la fixe explicitement. */
+select {
+  color-scheme: dark;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Scrollbars fines */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 35%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Scène 3D plein écran ─────────────────────────────────────────────── */
+
+.scene {
+  position: fixed;
+  inset: 0;
+  background: var(--scene-bg);
+  background-size: cover;
+  background-position: center;
+}
+
+.scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Recadrage de l'avatar : bouton posé SUR la scène, hors du panneau de chat (le
+   mode VN y coupe les pointer-events). Discret au repos, franc au survol.
+   Placement : le bas de l'écran appartient au panneau (feuille basse sous 900 px)
+   ou à la boîte de visual novel — par défaut le bouton se range donc en haut à
+   gauche, le seul coin libre partout, et ne descend que là où c'est net. */
+.scene-reset {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  /* Disque sombre translucide : sans lui, l'icône claire se perd sur un fond
+     d'écran clair (chambre rose + icône rose = invisible). */
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.scene-reset svg {
+  width: 17px;
+  height: 17px;
+}
+
+.scene-reset:hover,
+.scene-reset:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+/* Tactile : aucun survol pour le révéler — il reste en demi-teinte, avec une
+   zone de toucher confortable (même esprit que .msg-edit). La largeur d'écran
+   compte AUTANT que le type de pointeur : un écran de 768 px ou moins se touche,
+   que le navigateur l'avoue ou non (un bureau qui simule un téléphone ne change
+   pas `pointer`, et c'est pourtant là qu'on vise au doigt). 44 px et non 38 : le
+   bouton est isolé sur la scène, aucun voisin ne rattrape un doigt qui rate —
+   c'était 900 px² utiles contre 1 600 attendus, soit -44 % de surface. */
+@media (pointer: coarse), (max-width: 768px) {
+  .scene-reset {
+    width: 44px;
+    height: 44px;
+    opacity: 0.55;
+  }
+}
+
+/* Le panneau de chat est devenu une colonne à droite : tout le bas gauche de la
+   scène est libre, le bouton s'y range (loin de l'avatar et de son visage). */
+@media (min-width: 900px) {
+  .scene-reset {
+    top: auto;
+    bottom: 14px;
+    left: 14px;
+  }
+}
+
+/* Mode VN : la boîte de dialogue (centrée, jusqu'à 900 px de large) mange le bas
+   de l'écran — le coin bas gauche n'est franchement libre qu'au-delà. */
+@media (max-width: 1099px) {
+  .scene-reset.vn {
+    top: 12px;
+    bottom: auto;
+  }
+}
+
+/* Écran COURT en mode VN : le quick-menu repasse en RANGÉE et occupe le bandeau
+   du haut (12 → 62 px, voir la section visual novel). Le bouton descend juste
+   dessous. Le partager avec la rangée était exclu, arithmétiquement : 7 icônes +
+   ce bouton, à 40 px chacun, demandent 8 × 40 = 320 px, soit la largeur ENTIÈRE
+   d'un écran de 320 px, retraits compris. */
+@media (max-height: 700px) and (max-width: 1099px) {
+  .scene-reset.vn {
+    top: 70px;
+  }
+}
+
+/* ── Astuce des interactions 3D (une seule fois) ──────────────────────── */
+
+/* Une ligne posée au bas de la scène, à la première scène vivante en service,
+   puis plus jamais (préférence serveur hint3dSeen). Rien ne signalait qu'on
+   pouvait cliquer le sol, un siège ou le personnage : ces gestes s'apprenaient
+   par accident, ou pas du tout.
+
+   Une PHRASE, pas un panneau : ni cadre, ni icône, ni bouton « compris » — elle
+   arrive, se lit, s'en va. Inerte (pointer-events: none) : elle traverse la
+   scène, un clic pendant qu'elle est là fait ce qu'elle explique.
+
+   L'astuce ne peut apparaître que sur grand écran, la scène vivante y étant
+   réservée : aucune variante étroite n'est écrite ici. */
+.scene-hint {
+  position: fixed;
+  z-index: 6;
+  /* AU-DESSUS du bouton de recadrage plutôt qu'à côté : il occupe le coin bas
+     gauche jusqu'à 44 px du bord (30 px de disque à 14 px de marge). Passer
+     par-dessus laisse la phrase respirer sur toute la bande — la contourner
+     par la gauche lui aurait coûté 100 px de largeur sur les 480 disponibles à
+     900 px de fenêtre, la plus étroite qui puisse l'afficher. */
+  bottom: 54px;
+  left: 0;
+  /* Centrée dans la bande laissée par la colonne de chat. */
+  right: var(--chat-col-w);
+  padding: 0 24px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+  /* Le texte est clair et la scène peut l'être aussi (une chambre en plein
+     jour) : l'ombre porte la lisibilité sans imposer de pastille opaque. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75), 0 0 10px rgba(0, 0, 0, 0.5);
+  animation: scene-hint 8.5s ease forwards;
+}
+
+/* Mode visual novel : la boîte de dialogue occupe le bas de l'écran et la
+   colonne de chat n'existe plus — l'astuce monte en haut. Le retrait latéral
+   la tient à l'écart du quick-menu d'icônes, en colonne dans le coin droit
+   (et en rangée sur écran court, d'où le retrait des DEUX côtés). */
+.scene-hint.vn {
+  top: 18px;
+  bottom: auto;
+  right: 0;
+  padding: 0 76px;
+}
+
+/* Fondu d'entrée court, longue tenue, sortie douce. Aucun mouvement : une
+   phrase qui glisse attirerait l'œil, et c'est le personnage qu'on regarde. */
+@keyframes scene-hint {
+  0% {
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── Portrait 2D (personnage sans modèle VRM) ─────────────────────────── */
+
+/* Image de la card importée posée dans la scène, à la place du canvas 3D vide.
+   Mêmes règles de placement que l'avatar : posée au bas de l'écran, centrée, et
+   décalée du panneau de chat sur grand écran. Inerte (pointer-events) et
+   décorative : elle ne prend jamais la main sur la scène. */
+.scene-portrait {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 auto;
+  max-width: 92%;
+  max-height: 75vh;
+  max-height: 75dvh;
+  pointer-events: none;
+  /* Ombre douce façon visual novel : le sujet se détache du fond, sans cadre —
+     drop-shadow suit la silhouette des PNG détourés des cards. */
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
+}
+
+/* Le panneau de chat devient une colonne à droite : le portrait se centre dans
+   ce qui reste (mêmes marges de sécurité que l'avatar 3D décalé). */
+@media (min-width: 900px) {
+  .scene-portrait {
+    right: var(--chat-col-w);
+    max-width: calc(100% - var(--chat-col-w) - 32px);
+  }
+  /* Mode VN : plus de colonne, la scène est plein écran — retour au centre.
+     Colonne REPLIÉE : même géométrie, la scène a récupéré tout l'écran. */
+  .scene-portrait.vn,
+  .scene-portrait.collapsed {
+    right: 0;
+    max-width: 92%;
+  }
+}
+
+/* ── Panneau de chat en verre ─────────────────────────────────────────── */
+
+.chat-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Hauteur réglée à la barre-poignée (--sheet-h), bornée : la scène garde
+     toujours ses 15 % — le même plafond que sheetMax() côté layout.ts. */
+  height: min(var(--sheet-h, 52dvh), 85dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-top: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  transition: transform 0.2s ease;
+  z-index: 10;
+}
+
+/* Repli de la feuille basse — :not(.vn) : le mode VN a SON repli (la boîte de
+   dialogue masquée, plus bas), et le desktop le sien (translateX du media). */
+.chat-panel.collapsed:not(.vn) {
+  transform: translateY(calc(100% - 44px - env(safe-area-inset-bottom)));
+}
+
+/* Barre-poignée de la feuille : toucher replie, GLISSER règle la hauteur,
+   double-toucher réinitialise — les trois gestes des autres modes, au même
+   endroit. Le geste vertical nous appartient en entier (touch-action). */
+.sheet-handle {
+  flex: none;
+  height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: ns-resize;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.handle-bar {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(236, 231, 242, 0.35);
+  transition: background 0.15s ease;
+}
+
+.sheet-handle:hover .handle-bar,
+.sheet-handle[data-dragging] .handle-bar {
+  background: var(--accent);
+}
+
+/* Languette de repli de la colonne desktop : posée SUR la scène, accolée au
+   bord gauche du panneau (left négatif), mi-hauteur. Sobre : en demi-teinte au
+   repos, franche au survol. Une fois la colonne repliée (translateX), cette
+   languette est ce qui en reste à l'écran — et le geste pour la rouvrir. */
+.col-toggle {
+  display: none; /* réservée au desktop hors VN (cf. les media plus bas) */
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.col-toggle:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+@media (min-width: 900px) {
+  .chat-panel {
+    left: auto;
+    top: 0;
+    width: var(--chat-col-w);
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    border-top: none;
+    border-left: 1px solid var(--border);
+  }
+  /* Colonne repliée : glissée contre le bord droit. Elle reste montée (aucun
+     état perdu), seule la languette — qui déborde du panneau — reste visible. */
+  .chat-panel.collapsed:not(.vn) {
+    transform: translateX(100%);
+  }
+  /* Replié, le bord gauche n'est plus une poignée de largeur. */
+  .chat-panel.collapsed .panel-grip {
+    display: none;
+  }
+  .sheet-handle {
+    display: none;
+  }
+  .chat-panel:not(.vn) .col-toggle {
+    display: flex;
+  }
+}
+
+/* ── Poignées de redimensionnement ────────────────────────────────────────
+   Zone de saisie fine, invisible au repos : un filet accent apparaît au survol
+   et pendant le geste. Double-clic = retour à la taille par défaut. */
+
+.panel-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: none; /* feuille basse : rien à élargir (cf. le media juste après) */
+  width: 7px;
+  cursor: col-resize;
+  user-select: none;
+  /* Le geste VERTICAL reste au navigateur (le fil défile au doigt), seul
+     l'horizontal nous revient : redimensionner ne coûte pas le défilement. */
+  touch-action: pan-y;
+}
+
+/* La poignée n'a de sens que là où le panneau EST une colonne de largeur réglée.
+   Déclaré après la règle de base : même spécificité, c'est l'ordre qui tranche. */
+@media (min-width: 900px) {
+  .panel-grip {
+    display: block;
+  }
+}
+
+/* Mode visual novel : plus de colonne, plus rien à élargir. */
+.chat-panel.vn .panel-grip {
+  display: none;
+}
+
+.panel-grip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.panel-grip:hover::before,
+.panel-grip[data-dragging]::before {
+  opacity: 0.7;
+}
+
+/* Coin haut-gauche de la boîte de dialogue VN : un petit équerre d'accent, posée
+   dans le retrait de la boîte (elle ne mord ni sur le texte ni sur l'étiquette
+   de nom, qui commence à 16 px). Le geste est diagonal : largeur ET hauteur. */
+.vn-grip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 15px;
+  height: 15px;
+  cursor: nwse-resize;
+  user-select: none;
+  touch-action: none; /* rien ne défile sous ce coin : le geste est à nous */
+}
+
+.vn-grip::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--accent);
+  border-left: 1px solid var(--accent);
+  border-radius: 3px 0 0 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.vn-grip:hover::before,
+.vn-grip[data-dragging]::before {
+  opacity: 0.8;
+}
+
+/* Tactile : aucun survol ne peut les révéler — zone de toucher élargie et filet
+   en demi-teinte permanent (même esprit que .scene-reset). */
+@media (pointer: coarse) {
+  .panel-grip {
+    width: 16px;
+  }
+  .panel-grip::before {
+    left: 7px;
+    opacity: 0.3;
+  }
+}
+
+/* Poignée de la boîte VN au doigt OU sur petit écran : affichée FRANCHEMENT.
+   La demi-teinte de 10 px à 0.35 était invisible en pratique — l'utilisateur
+   ne l'a jamais trouvée. Zone de toucher élargie, équerre plus grande, trait
+   doublé, opacité aux trois quarts : visible en permanence, sans crier. */
+@media (pointer: coarse), (max-width: 768px) {
+  .vn-grip {
+    width: 28px;
+    height: 28px;
+  }
+  .vn-grip::before {
+    width: 13px;
+    height: 13px;
+    border-top-width: 2px;
+    border-left-width: 2px;
+    opacity: 0.75;
+  }
+  .vn-grip:hover::before,
+  .vn-grip[data-dragging]::before {
+    opacity: 1;
+  }
+}
+
+/* ── TopBar ───────────────────────────────────────────────────────────── */
+
+.topbar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px 6px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-main {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* la rangée d'icônes est seule : centrée, pas de vide */
+  gap: 6px;
+  min-height: 46px;
+}
+
+@media (min-width: 900px) {
+  .topbar {
+    padding-top: 8px;
+  }
+}
+
+/* Le nom vit en tête de la ligne 2 : il ne cède JAMAIS sa place au titre
+   (flex none) mais s'arrête à la moitié de la ligne pour les noms fleuves.
+   Bien visible (c'est LUI l'interlocuteur), et un retrait le sépare du titre. */
+.topbar-name {
+  flex: none;
+  max-width: 50%;
+  margin-right: 8px; /* s'ajoute au gap : le nom respire */
+  font-weight: 650;
+  font-size: 14.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ligne 2 : nom du personnage, titre du chat, jauge de contexte accolée */
+.topbar-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  padding: 0 6px 4px 0;
+}
+
+/* `flex: 0 1 auto` : le titre ne s'étire pas (la jauge reste collée à lui) mais
+   il se laisse rétrécir avec des points de suspension quand la place manque. */
+.topbar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Huit icônes en ligne (loupe comprise), SEULES sur la ligne 1 : la rangée prend
+   toute la largeur disponible et les boutons se la PARTAGENT — au plus 44 px
+   chacun (au-delà ce ne serait que du vide, et le groupe reste centré), jamais un
+   pixel de débordement. Aucun palier de largeur ne pouvait tenir cette promesse :
+   8 × 44 = 352 px passe tout juste à 375 px, plus du tout à 360 — ni dans la
+   colonne de droite réduite à sa largeur minimale (320 px), que la largeur de la
+   FENÊTRE ne raconte pas. La hauteur de touche, elle, reste à 44 px partout.
+   À 320 px les boutons tombent à 37,25 px de large (298 px de rangée à huit) et
+   on n'y peut RIEN : 8 × 40 = 320 px, la largeur entière de l'écran, retraits
+   compris. Ce qui est perdu tient dans le chiffre : 2,75 px sur une dimension,
+   pour 37,25 x 44 = 1 639 px² de surface touchable, au-dessus des 1 600 px²
+   d'une cible de 40 x 40 ; et les boutons se touchent, donc pas un pixel mort
+   entre eux — un doigt qui glisse ouvre le dialog voisin, aucun n'est
+   destructeur. Le mode VN, lui, a de quoi les servir en plein (voir plus bas). */
+.topbar nav {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  justify-content: center; /* place restante partagée de part et d'autre */
+}
+
+.topbar nav .icon-btn {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 44px;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* Boutons-bascule de la barre (mode visual novel) */
+.icon-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  background: none;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── Bandeau backend injoignable ──────────────────────────────────────── */
+
+.banner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 10px 0;
+  padding: 8px 8px 8px 12px;
+  background: rgba(255, 122, 144, 0.1);
+  border: 1px solid rgba(255, 122, 144, 0.35);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+/* Variante SANS alarme : le décor s'affiche, il est simplement mal calé et on
+   dit quoi écrire pour le caler. Le rose d'alerte crierait à la panne là où il
+   n'y a qu'un réglage à faire — d'où les couleurs neutres du fond de l'app. */
+.banner.note {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border-color: var(--border);
+  color: var(--text-dim);
+  backdrop-filter: blur(6px);
+}
+
+/* ── Fil de messages ──────────────────────────────────────────────────── */
+
+/* Enveloppe transparente du fil : n'existe que pour ancrer le champ de
+   recherche flottant (aucun pixel, elle occupe exactement la place du fil). */
+.messages-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overscroll-behavior: contain;
+}
+
+.msg {
+  max-width: 86%;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.msg.assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubble {
+  padding: 9px 13px;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid var(--border);
+}
+
+.msg.user .bubble {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-bottom-right-radius: 5px;
+}
+
+.msg.assistant .bubble {
+  background: rgba(255, 255, 255, 0.055);
+  border-bottom-left-radius: 5px;
+}
+
+/* Markdown dans les bulles et dans la boîte VN (rendu par markdown.tsx) */
+.bubble code,
+.vn-text code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.bubble pre,
+.vn-text pre {
+  margin: 6px 0;
+  padding: 8px 11px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Bloc de code avec bouton Copier — guide d'installation SearXNG. */
+.code-copy {
+  position: relative;
+  margin: 6px 0;
+}
+
+.code-copy pre {
+  margin: 0;
+  padding: 10px 64px 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.code-copy .btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.bubble em,
+.vn-text em {
+  color: rgba(236, 231, 242, 0.85);
+}
+
+/* Citation « > … » — produite entre autres par « Répondre à ce message » */
+.bubble blockquote,
+.vn-text blockquote {
+  margin: 0 0 6px;
+  padding: 1px 0 1px 9px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-dim);
+  font-size: 0.92em;
+}
+
+/* Rangée d'actions sous la bulle (icônes au survol) — l'horodatage, lui, vit
+   DANS la bulle (.bubble-ts). */
+.msg-ts {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  margin-top: 1px;
+  padding: 0 4px;
+  min-height: 15px;
+}
+
+/* Horodatage en bas à droite de la bulle, façon messagerie. */
+.bubble-ts {
+  float: right;
+  margin: 9px -5px -3px 10px;
+  font-size: 9.5px;
+  line-height: 1;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* Raisonnement du modèle — bloc repliable au-dessus de la bulle (réglage « Afficher les pensées ») */
+.thoughts {
+  max-width: 100%;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.thoughts summary {
+  cursor: pointer;
+  user-select: none;
+  font-style: italic;
+}
+
+.thoughts summary::marker {
+  color: var(--accent);
+}
+
+.thoughts-body {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* La puce ENTIÈRE est le <summary> d'un <details> : cliquer dessus (la loupe
+   comprise) déplie le résumé complet des résultats, juste en dessous. */
+.tool-chip-wrap {
+  align-self: flex-start;
+  max-width: 90%;
+}
+
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 5px 13px;
+  max-width: 100%;
+  cursor: pointer;
+  list-style: none; /* la loupe suffit à dire « cliquable » — pas de triangle natif */
+}
+
+.tool-chip::-webkit-details-marker {
+  display: none;
+}
+
+.tool-chip svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.tool-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Résultats complets, dépliés sous la puce — un résultat par bloc, avec son
+   lien cliquable et son extrait. Même esprit sobre que .thoughts-body. */
+.tool-chip-body {
+  margin-top: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.result-entry + .result-entry {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.result-title {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.result-title:hover {
+  color: var(--accent);
+}
+
+.result-url {
+  display: block;
+  color: var(--text-dim);
+  font-size: 11px;
+  word-break: break-all;
+  text-decoration: none;
+}
+
+.result-url:hover {
+  color: var(--accent);
+}
+
+.result-snippet {
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-bubble {
+  align-self: center;
+  font-size: 12.5px;
+  color: var(--danger);
+  background: rgba(255, 122, 144, 0.08);
+  border: 1px solid rgba(255, 122, 144, 0.25);
+  border-radius: 10px;
+  padding: 6px 12px;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* Actions sur la dernière réponse (Régénérer / Continuer) */
+.reply-actions {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px 12px 4px;
+}
+
+.reply-actions .btn {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+.reply-actions .btn:hover {
+  color: var(--text);
+  border-style: solid;
+}
+
+/* Crayon d'édition à côté de l'horodatage */
+.msg-edit {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  margin-left: 5px;
+  cursor: pointer;
+  color: var(--text-dim);
+  opacity: 0.55;
+  vertical-align: middle;
+}
+
+.msg-edit:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Punaise du message actuellement épinglé */
+.msg-edit.pinned {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Corbeille armée : un clic de plus et le message s'en va — elle le dit en rouge. */
+.msg-edit.armed,
+.msg-edit.armed:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+/* Réplique en cours de lecture : le haut-parleur est devenu un carré « stop ».
+   Visible SANS survol (le sélecteur double l'emporte sur le `.msg-edit` de la
+   règle souris) — la voix parle maintenant, la couper ne doit pas demander de
+   retrouver la bulle. */
+.msg-edit.playing {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.msg-edit svg {
+  width: 11px;
+  height: 11px;
+  display: inline-block;
+}
+
+/* Souris : la rangée d'icônes n'existe qu'au survol de la bulle — une bulle de
+   chat doit ressembler à une bulle de chat, pas à une barre d'outils. */
+@media (pointer: fine) {
+  .msg-edit {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .msg:hover .msg-edit,
+  .msg:focus-within .msg-edit,
+  .tool-chip:hover .msg-edit,
+  .tool-chip:focus-within .msg-edit,
+  .msg-edit:focus-visible {
+    opacity: 0.55;
+  }
+  .msg:hover .msg-edit:hover,
+  .msg:hover .msg-edit.pinned,
+  .msg:focus-within .msg-edit.pinned,
+  .msg:hover .msg-edit.armed,
+  .msg:focus-within .msg-edit.armed,
+  .msg:hover .msg-edit.playing,
+  .msg:focus-within .msg-edit.playing {
+    opacity: 1;
+  }
+}
+
+/* Tactile : visibles (pas de survol) mais avec une vraie zone de toucher. */
+@media (pointer: coarse) {
+  .msg-edit {
+    padding: 8px 7px;
+    margin-left: 1px;
+  }
+  .msg-edit svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ── Variantes de réponse (« Régénérer » les empile) ────────────────────────
+   Les flèches ‹ n/m › ouvrent la rangée du survol, avant les actions : elles ne
+   modifient rien, elles changent ce qu'on lit. Boutons .msg-edit, donc même
+   discrétion et même apparition au survol que leurs voisines — seul le compteur
+   demande ses propres règles. */
+.msg-variants {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+.msg-vcount {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  opacity: 0.75;
+}
+
+/* Flèche en bout de course : présente, mais éteinte — feuilleter n'est pas un
+   carrousel. Jamais visible sans survol : les règles restent dans les media. */
+.msg-variants .msg-edit:disabled {
+  cursor: default;
+}
+
+@media (pointer: fine) {
+  .msg-vcount {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .msg:hover .msg-vcount,
+  .msg:focus-within .msg-vcount {
+    opacity: 0.75;
+  }
+  .msg:hover .msg-variants .msg-edit:disabled,
+  .msg:focus-within .msg-variants .msg-edit:disabled {
+    opacity: 0.18;
+  }
+}
+
+/* Tactile : cibles de 40 px, sans grossir l'icône (le dessin reste celui des
+   voisines, c'est la zone de toucher qui s'élargit). */
+@media (pointer: coarse) {
+  .msg-variants .msg-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    margin-left: 0;
+  }
+  .msg-variants .msg-edit:disabled {
+    opacity: 0.18;
+  }
+}
+
+.bubble.editing {
+  width: min(420px, 78vw);
+}
+
+.bubble.editing textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+/* Ligne d'info discrète (compaction terminée…) — éphémère, jamais sauvegardée */
+.info-line {
+  align-self: center;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 2px 12px;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* Pastille pendant la compaction (le chat reste utilisable) */
+.compact-pill {
+  align-self: center;
+  margin: 4px auto 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 3px 12px;
+  width: fit-content;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Badge de jauge de contexte (accolé au titre du chat, jamais tronqué) */
+.ctx-badge {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 7px;
+  cursor: default;
+}
+
+/* Code couleur du pourcentage — seul le TEXTE change, le fond reste neutre.
+   Tons volontairement désaturés : ils doivent rester lisibles sur les cinq
+   thèmes sombres ET sur un thème perso clair, d'où des valeurs de luminosité
+   moyennes plutôt qu'un vert/rouge vif. 85 % = seuil d'auto-compaction. */
+.ctx-badge.ctx-ok {
+  color: #62b189;
+}
+
+.ctx-badge.ctx-warn {
+  color: #cf9550;
+}
+
+.ctx-badge.ctx-high {
+  color: #d4787e;
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+/* Indicateur « … » pendant l'attente du premier delta */
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 0 2px;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  animation: typing 1.1s infinite ease-in-out;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* ── Recherche dans la conversation (Ctrl+F) ──────────────────────────── */
+/* Rien n'existe tant que le raccourci n'a pas été frappé : ni bouton, ni icône.
+   Le champ se pose au-dessus du fil, il ne le décale pas. */
+
+.search-bar {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 11px;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+}
+
+.search-bar input:focus {
+  outline: none;
+}
+
+.search-bar input::placeholder {
+  color: var(--text-dim);
+}
+
+.search-count {
+  flex: none;
+  padding: 0 4px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-nav {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.search-nav:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.search-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.search-nav svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Correspondances dans les bulles (la courante ressort seule) */
+.search-hit {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: inherit;
+  border-radius: 3px;
+}
+
+.search-hit.current {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Ruban du message épinglé, en haut du fil : replié à 2 lignes, déplié au clic.
+   Pur affichage — l'épingle n'entre jamais dans le contexte envoyé au modèle. */
+.pin-ribbon {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 8px 12px 0;
+  padding: 5px 4px 5px 10px;
+  background: var(--panel-strong);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+/* Recherche ouverte : la barre est en absolute au-dessus du fil (top 8px, hauteur
+   réelle 40px = champ 32 + marge intérieure 3×2 + bordure 1×2), le ruban est dans
+   le flux et passerait dessous. Il glisse donc juste après elle — 8 + 40 + 8 de
+   respiration — sans que la recherche ne bouge d'un pixel. */
+.pin-ribbon.under-search {
+  margin-top: 56px;
+}
+
+.pin-ribbon-text {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.pin-ribbon.open .pin-ribbon-text {
+  display: block;
+  /* dvh : le vh mobile compte la barre d'URL et mangerait le fil. */
+  max-height: min(22dvh, 190px);
+  overflow-y: auto;
+}
+
+.pin-ribbon-close {
+  flex: none;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.pin-ribbon-close:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.pin-ribbon-close svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Bandeau « en réponse à … » : visible jusqu'à l'envoi (ou l'annulation) */
+.reply-quote {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 10px;
+  padding: 4px 4px 4px 9px;
+  font-size: 12px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.reply-quote-who {
+  flex: none;
+  color: var(--accent);
+}
+
+.reply-quote-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-quote-close {
+  flex: none;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.reply-quote-close:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.reply-quote-close svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ── Composer ─────────────────────────────────────────────────────────── */
+
+.composer {
+  flex: none;
+  position: relative; /* ancre du menu des commandes (.cmd-menu) */
+  display: flex;
+  align-items: flex-end;
+  /* Enveloppe : la bande de vignettes (.shots, largeur pleine) prend la ligne
+     du dessus SANS sortir du composer — la mise en page du mode VN est intacte. */
+  flex-wrap: wrap;
+  /* 6px et non 8 : chaque px repris ici va DIRECTEMENT au champ de texte (flex:1),
+     le seul élément élastique de la rangée — sensible sur petit écran, où trois
+     icon-btn de chaque côté du champ (clip, micro, impersonate) grignotaient sa
+     largeur. */
+  gap: 6px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+}
+
+/* ── Images jointes ───────────────────────────────────────────────────────
+   Rien de tout ceci n'existe si le modèle ne lit pas les images : le trombone
+   n'est même pas monté (App → visionEnabled). */
+
+/* Trombone : une .icon-btn resserrée, alignée sur la hauteur du champ. 32 px
+   de large (et non 44, la base de .icon-btn) : le champ de texte est le seul
+   élément élastique de la rangée, chaque icon-btn resserrée lui revient. */
+.clip-btn {
+  width: 32px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.clip-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* ── Micro (dictée) ───────────────────────────────────────────────────────
+   Même gabarit que le trombone ; le bouton n'est monté que si le navigateur
+   sait reconnaître la parole. Pendant l'écoute il respire doucement — une
+   lueur accent, pas un gyrophare. */
+.mic-btn {
+  width: 32px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.mic-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mic-btn.listening {
+  color: var(--accent);
+  animation: mic-pulse 1.7s ease-in-out infinite;
+}
+
+/* ── Impersonate ──────────────────────────────────────────────────────────
+   Même gabarit que le trombone et le micro (cohérence du langage visuel des
+   icon-btn du composer), mais posé juste AVANT Envoyer, pas dans le cluster
+   de gauche : c'est la dernière action avant d'envoyer, pas un réglage du
+   message. La marge droite ajoute un cran au gap de .composer (6px) — 10px
+   au total avant Envoyer — pour qu'un pouce visant Impersonate n'effleure pas
+   le bouton d'envoi juste à côté. Toujours monté (contrairement au trombone
+   et au micro, sans détection de fonctionnalité), juste grisé sans historique. */
+.impersonate-btn {
+  width: 32px;
+  height: 44px;
+  border-radius: 12px;
+  margin-right: 4px;
+}
+
+.impersonate-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+@keyframes mic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--accent-soft);
+  }
+  50% {
+    opacity: 0.62;
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic-btn.listening {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+
+/* Vignettes en attente d'envoi, au-dessus du champ. */
+.shots {
+  flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shot {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.shot img {
+  height: 56px;
+  width: auto;
+  max-width: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.shot-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.shot-remove:hover {
+  color: var(--text);
+}
+
+.shot-remove svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* ── Cibles tactiles des petits boutons ───────────────────────────────────
+   Toutes ces croix et flèches sont dessinées pour la souris (18 à 30 px). Au
+   doigt elles sont chiches : on les élargit d'un cran, sans jamais toucher au
+   dessin. Placé APRÈS les règles concernées — à spécificité égale, c'est
+   l'ordre qui tranche, et un @media n'y change rien. */
+@media (pointer: coarse), (max-width: 768px) {
+  /* Recherche : deux flèches + la croix de fermeture, COLLÉES l'une à l'autre —
+     rater « Suivant » c'est fermer la recherche. 36 px restaient sous le seuil
+     dans les deux dimensions : elles passent à 40, et l'écart entre elles de 2 à
+     4 px. La barre grandit de 40 à 48 px, donc le ruban épinglé qui se range
+     dessous suit (8 + 48 + 8). Coût pour le champ à 320 px de large : 30 + 6 =
+     36 px, il lui reste 147 px utiles pour un libellé qui en demande 84,3. */
+  .search-nav {
+    width: 40px;
+    height: 40px;
+  }
+  .search-bar {
+    gap: 4px;
+  }
+  .search-bar input {
+    min-height: 40px;
+  }
+  .pin-ribbon.under-search {
+    margin-top: 64px;
+  }
+  .pin-ribbon-close,
+  .reply-quote-close {
+    width: 32px;
+    height: 32px;
+  }
+  /* Croix d'une vignette en attente : 18 px, c'était un point de mire. */
+  .shot-remove {
+    width: 24px;
+    height: 24px;
+  }
+  .shot-remove svg {
+    width: 12px;
+    height: 12px;
+  }
+  /* Trombone, micro et impersonate ne grandissent PAS ici, à l'inverse des
+     autres cibles tactiles de ce bloc : sur petit écran c'est le champ de
+     texte (seul élément élastique de la rangée) qui doit rester confortable,
+     pas ces trois icônes secondaires — leur gabarit resserré (32 px, cf.
+     .clip-btn/.mic-btn/.impersonate-btn) vaut donc à toutes les tailles. */
+  /* Commandes secondaires des dialogs : gabarit uniforme de 36 px, dessiné pour
+     la souris. Seule la HAUTEUR manque (les libellés font 56 à 158 px de large),
+     et rien ne dépend de cette hauteur : les groupes segmentés passent déjà à la
+     ligne, le corps du dialog défile. `.dialog-card` en tête donne à la règle la
+     spécificité qu'il faut, où qu'elle soit lue — et laisse tranquilles les
+     mêmes boutons hors dialog (la bande basse du mode VN, où 4 px de plus
+     remonteraient la boîte de dialogue). */
+  .dialog-card .seg-btn,
+  .dialog-card .btn.small {
+    min-height: 40px;
+  }
+  /* Champs de saisie des dialogs. Relevé à 320 x 568, dialog par dialog et
+     onglet par onglet : le gabarit commun (.field, .row) tient déjà 44,5 px et
+     le renommage inline 44 — un SEUL champ habillé sur mesure passe dessous,
+     « Nom du nouveau fichier mémoire », 37,5 px de haut à tous les formats
+     (min-height 36 px, police 13 px). C'est donc lui, nommément, qu'on remonte.
+     Une règle large sur `.dialog-card input` coûterait plus qu'elle ne
+     rapporte : elle RABAISSERAIT le renommage inline de 44 à 40 (il se cale sur
+     la ligne de 44 px qu'il remplace, .chat-item et .memory-file), et elle
+     étirerait les deux <input> qui ne sont pas des champs — la case à cocher EST
+     le dessin de l'interrupteur (44 x 26, sa cible est le <label> entier, voir
+     plus bas) et la pastille de couleur du thème perso est une pastille
+     (34 x 26). */
+  .dialog-card .memory-files input {
+    min-height: 40px;
+  }
+  /* Régénérer / Continuer sous la dernière réponse : 36 px de haut, deux
+     boutons collés dont l'un relance une génération. En mode chat le fil
+     DÉFILE, les 4 px ne sont pris à personne. Le mode VN est laissé de côté
+     pour la même raison qu'en haut : là-bas la bande est le pied de la boîte de
+     dialogue, et 4 px de plus la remontent sur la scène. */
+  .chat-panel:not(.vn) .reply-actions .btn {
+    min-height: 40px;
+  }
+  /* « Pensées » : le <summary> du bloc de raisonnement mesurait 52,94 x 18 px =
+     953 px², la plus petite cible de l'app — et seule sur sa ligne, aucun
+     voisin ne rattrape un doigt qui rate. Ni la typo (12 px) ni le cadre
+     pointillé ne bougent : les 4 px de rembourrage vertical passent seulement du
+     conteneur au <summary>, qui gagne 11 px de chaque côté et DEVIENT la zone
+     cliquable — 40 px de haut, 2 118 px². La boîte fermée passe de 28 à 42 px,
+     le texte reste au même corps, au même style et au même endroit de la ligne
+     (rembourrage symétrique = ligne centrée). `.thoughts-body` reprend à son
+     compte les 4 px que le conteneur perd en bas, pour que le bloc OUVERT garde
+     son fond de boîte. */
+  .thoughts {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .thoughts summary {
+    padding: 11px 0;
+  }
+  .thoughts-body {
+    padding-bottom: 4px;
+  }
+}
+
+/* Vignettes DANS une bulle (et dans la boîte VN) — clic = image en grand. */
+.msg-shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.msg-shot {
+  padding: 0;
+  border: none;
+  background: none;
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+.msg-shot img {
+  max-height: 160px;
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* Image en grand : calque plein écran, un clic n'importe où referme. */
+.image-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+}
+
+.image-overlay img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+}
+
+/* Menu des commandes slash : flotte juste au-dessus du champ, dans les deux
+   modes (le composer est son ancre). Sobre : deux lignes, pas d'ombre lourde. */
+.cmd-menu {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(100% + 4px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 4;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.cmd-item.active,
+.cmd-item:hover {
+  background: var(--accent-soft);
+}
+
+.cmd-name {
+  font-family: var(--mono);
+  color: var(--accent);
+  flex: none;
+}
+
+.cmd-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 11px 14px;
+  min-height: 44px;
+  max-height: 160px;
+  line-height: 1.4;
+}
+
+.composer textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.composer textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.composer textarea:disabled {
+  opacity: 0.5;
+}
+
+/* Écran COURT : le champ ne prend pas le tiers de l'écran. À 568 px de haut, la
+   feuille de chat fait 52 dvh = 295 px — un composer de 176 px n'y laisse que
+   75 px de fil. En mode VN c'est la boîte de dialogue qui reculait : le champ
+   grandit vers le HAUT et poussait la boîte de 116 px, jusque dans la rangée
+   d'icônes. Plafond à 96 px (≈ 4 lignes) : le pire empilement VN mesurable à
+   320 × 568 — texte au maximum (227) + boîte (23) + composer plein (112) +
+   bande basse (31) + marge (10) + vignettes d'images (64) = 467 px — laisse
+   encore 39 px sous la rangée. Le JS d'auto-agrandissement n'a rien à savoir :
+   il écrit `height` en style, max-height le borne. */
+@media (max-height: 700px) {
+  .composer textarea {
+    max-height: 96px;
+  }
+}
+
+.send-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+  padding: 0;
+}
+
+.send-btn:hover {
+  filter: brightness(1.08);
+}
+
+.send-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.send-btn.stop {
+  background: rgba(255, 122, 144, 0.9);
+  color: #2a1118;
+}
+
+.send-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── États vides ──────────────────────────────────────────────────────── */
+
+.empty-state {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  overflow-y: auto;
+}
+
+.empty-state h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 320px;
+  font-size: 14px;
+}
+
+/* ── Dialogs ──────────────────────────────────────────────────────────── */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 7, 16, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.15s ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--panel-strong);
+  overflow: hidden;
+  animation: card-in 0.18s ease;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 600px) {
+  .dialog-overlay {
+    padding: 24px;
+  }
+  .dialog-card {
+    max-width: 560px;
+    height: auto;
+    max-height: min(85dvh, 780px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  }
+  .dialog-card.wide {
+    max-width: 760px;
+  }
+}
+
+.dialog-card > header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top)) 8px 10px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 600px) {
+  .dialog-card > header {
+    padding-top: 10px;
+  }
+}
+
+.dialog-card > header h2 {
+  margin: 0;
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 18px calc(16px + env(safe-area-inset-bottom));
+}
+
+.dialog-footer {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+}
+
+/* ── Boutons ──────────────────────────────────────────────────────────── */
+
+.btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: var(--accent);
+  filter: brightness(1.07);
+}
+
+.btn.danger {
+  background: rgba(255, 122, 144, 0.12);
+  border-color: rgba(255, 122, 144, 0.4);
+  color: var(--danger);
+}
+
+.btn.danger:hover {
+  background: rgba(255, 122, 144, 0.2);
+}
+
+.btn.small {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+
+.file-btn {
+  position: relative;
+}
+
+/* ── Formulaires ──────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.field > label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+
+.field input,
+.field select,
+.field .select-menu-btn,
+.field textarea,
+.row input,
+.login-card input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+/* Filtre en tête de la liste des conversations : mêmes atours que les champs
+   des formulaires (la .field ne l'entoure pas — il n'a pas d'étiquette, son
+   texte d'invite suffit), et 44 px de haut comme eux, doigt compris. */
+.list-filter {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+  margin-bottom: 10px;
+}
+
+.field select,
+.field .select-menu-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.45;
+}
+
+.field textarea.mono,
+.memory-textarea {
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 220px;
+}
+
+.field input:focus,
+.field select:focus,
+.field .select-menu-btn:focus,
+.field textarea:focus,
+.row input:focus,
+.login-card input:focus,
+.memory-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Portrait 2D dans le dialog Personnages : vignette INFORMATIVE (l'image vient de
+   la card importée, choisir un modèle 3D la remplace) — aucune action dessus. */
+.portrait-thumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.portrait-thumb img {
+  flex: none;
+  width: 54px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Photo du personnage : l'aperçu (même rond que la grille) et ses actions, qui
+   passent à la ligne plutôt que de s'écraser sur écran étroit. */
+.photo-block {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Variantes du message d'accueil : une ligne = un texte + son bouton retirer. */
+
+.variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variant-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.variant-row textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+}
+
+.variant-row .btn {
+  flex: none;
+  padding: 0 10px;
+}
+
+.variant-row .btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* Champ « Fond » : le sélecteur, plus un bouton discret d'ajout d'image. */
+.pick-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pick-row .select-menu-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.pick-row .btn {
+  flex: none;
+  padding: 0 12px;
+}
+
+.pick-row .btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+@media (max-width: 480px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  margin: 20px 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+.msg-ok {
+  color: var(--ok);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.msg-err {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+/* ── Menu déroulant maison (SelectMenu) ────────────────────────────────────
+   Réservé aux listes LONGUES : le popup natif d'un <select> est peint par le
+   système, sa barre de défilement reste blanche sur notre thème sombre. Le
+   bouton fermé reprend exactement le look des <select> (règles .field select
+   ci-dessus) ; seul le panneau ouvert est à nous — rendu en portail sur <body>,
+   d'où le position: fixed et le z-index au-dessus du dialog. */
+
+.select-menu-btn {
+  display: block;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Aucune option ne correspond : le placeholder reste discret. */
+.select-menu-btn.empty {
+  color: var(--text-dim);
+}
+
+.select-menu-btn[aria-expanded='true'] {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.select-menu-panel {
+  position: fixed;
+  z-index: 60;
+  padding: 4px;
+  overflow-y: auto;
+  /* Arrivé en bout de liste, la molette ne doit pas emmener le dialog. */
+  overscroll-behavior: contain;
+  background: var(--panel-strong);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-radius: 10px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+}
+
+.select-menu-option {
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.select-menu-option:hover,
+.select-menu-option.active {
+  background: var(--accent-soft);
+}
+
+.select-menu-option[aria-selected='true'] {
+  color: var(--accent);
+}
+
+.select-menu-empty {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ── Sonde du serveur TTS ─────────────────────────────────────────────── */
+/* Une ligne de résultat, puis les voix annoncées par le serveur en pastilles :
+   cliquer une pastille remplit le champ « Voix » avec son identifiant exact. */
+
+.probe-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+/* Seule la marque porte la couleur : le texte reste sobre, même en erreur. */
+.probe-mark {
+  flex: none;
+  font-weight: 700;
+  color: var(--ok);
+}
+
+.probe-line.err .probe-mark {
+  color: var(--danger);
+}
+
+.voice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.voice-chip {
+  max-width: 100%;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  line-height: 1.1;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.voice-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+/* Voix actuellement dans le champ */
+.voice-chip[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+/* ── Sélecteur segmenté (langue) ──────────────────────────────────────── */
+
+.seg {
+  display: inline-flex;
+  /* Trois options aux libellés longs (premier message) : on passe à la ligne
+     plutôt que de déborder du dialog sur mobile. */
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.seg-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Éditeur compact du thème perso (visible uniquement quand « Perso » est actif) */
+.custom-theme {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+.custom-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.custom-color input[type='color'] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: none;
+  cursor: pointer;
+}
+
+/* Pastilles bicolores du sélecteur de thème */
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.theme-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.theme-dot span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: block;
+}
+
+.seg-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.seg-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Barre d'onglets (Réglages) : le même sélecteur segmenté, en pleine largeur.
+   Les onglets portent aria-selected (role="tab"), d'où l'état actif redonné. */
+.seg-tabs {
+  display: flex;
+  margin-bottom: 14px;
+}
+
+.seg-tabs .seg-btn {
+  flex: 1;
+  padding: 0 8px;
+}
+
+.seg-tabs .seg-btn[aria-selected='true'] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Le premier titre de section suit la barre d'onglets sans creux. */
+.seg-tabs + .section-title {
+  margin-top: 0;
+}
+
+/* ── Toggles ──────────────────────────────────────────────────────────── */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toggle-label {
+  font-size: 14px;
+}
+
+.toggle-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* 44 x 26 : c'est le DESSIN de l'interrupteur, pas sa cible. Toute la ligne est
+   un <label> — 44 px de haut au minimum sur toute la largeur du corps du dialog
+   (339 px à 375 px d'écran, retraits de 18 px déduits), soit 14 916 px² contre
+   les 1 600 px² d'une cible de 40 x 40. L'agrandir reviendrait à dessiner un
+   interrupteur difforme pour une surface qu'on a déjà neuf fois. */
+.toggle input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 44px;
+  height: 26px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  margin: 0;
+  transition: background 0.18s ease;
+}
+
+.toggle input::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.toggle input:checked {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.toggle input:checked::after {
+  transform: translateX(18px);
+  background: var(--accent-ink);
+}
+
+/* Interrupteur grisé : il reste LISIBLE (sa raison est écrite sous son nom, et
+   c'est le texte le plus utile de la ligne à ce moment-là), mais il ne répond
+   plus. Jamais caché — un réglage qui disparaît laisse croire qu'il n'existe pas. */
+.toggle.disabled {
+  cursor: default;
+}
+
+.toggle.disabled .toggle-label {
+  color: var(--text-dim);
+}
+
+.toggle.disabled input {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toggle.danger .toggle-label {
+  color: var(--danger);
+}
+
+.toggle.danger input:checked {
+  background: var(--danger);
+}
+
+.danger-zone {
+  border: 1px solid rgba(255, 122, 144, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  background: rgba(255, 122, 144, 0.05);
+}
+
+.warn-text {
+  font-size: 12.5px;
+  color: var(--danger);
+  margin: 0 0 10px;
+}
+
+/* ── Restauration d'une sauvegarde (Réglages ▸ Données) ───────────────── */
+/* L'aperçu : sobre et dense, il doit se lire d'un coup d'œil AVANT d'armer
+   le bouton rouge. Aucune couleur d'alerte ici — la zone de danger, juste
+   en dessous, est la seule à porter le rouge. */
+
+.restore-preview {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  background: var(--accent-soft);
+}
+
+.restore-head {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.restore-items {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.restore-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+/* Les deux seuls chiffres qui écrivent quelque chose ressortent. */
+.restore-diff .add,
+.restore-diff .rep {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.restore-chars {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.restore-chars li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.restore-tag {
+  flex: none;
+  min-width: 72px;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.restore-tag.replaced {
+  border-color: rgba(255, 122, 144, 0.5);
+  color: var(--danger);
+}
+
+.restore-tag.added {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Le chemin du filet : à recopier ou à retrouver dans l'explorateur — il ne
+   doit ni déborder ni être tronqué (une coupure le rendrait inutilisable). */
+.restore-net-path {
+  margin: 2px 0 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+  user-select: all;
+}
+
+.restore-done {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 6px;
+}
+
+/* Un <label> ne se grise pas tout seul : sans ça, « Choisir une archive »
+   resterait cliquable pendant la lecture de la précédente. */
+.file-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ── Crédits (Réglages ▸ Crédits) ─────────────────────────────────────────
+   Une liste, et rien d'autre : aucun logo, aucune animation, aucune couleur en
+   plus de celles du thème. Ce panneau est une obligation de licence (CC BY 4.0
+   des décors) avant d'être une page « à propos » — il doit se LIRE.
+
+   Cibles tactiles : les trois liens d'une ligne (l'œuvre, l'auteur, la licence)
+   sont des blocs inline-flex de 40 px de haut, à toutes les tailles d'écran.
+   Ils ne sont pas dans .dialog-card .btn : la règle mobile des commandes de
+   dialog ne les couvrirait pas. */
+
+.credits-panel .section-title {
+  margin-top: 24px;
+}
+
+.credits {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.credit {
+  padding: 2px 0 8px;
+  border-top: 1px solid var(--border);
+}
+
+.credit:first-child {
+  border-top: none;
+}
+
+.credit-title,
+.credit-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  /* Un titre long (« CMU Graphics Lab Motion Capture Database ») doit se couper
+     plutôt que d'élargir le dialog. */
+  max-width: 100%;
+}
+
+.credit-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+a.credit-title:hover,
+a.credit-link:hover {
+  text-decoration: underline;
+}
+
+a.credit-title {
+  color: var(--accent);
+}
+
+.credit-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  margin: -6px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.credit-by {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.credit-link {
+  color: var(--text-dim);
+  text-decoration: none;
+}
+
+a.credit-link {
+  color: var(--text);
+}
+
+/* La licence : la donnée qui compte le plus dans une ligne de crédit, donc la
+   seule chose de ce panneau qui porte un fond. */
+.credit-license {
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.credit-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* Décor livré sans attribution lisible : le trou se voit. */
+.credit-warn {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.credits-docs {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Grille de personnages ────────────────────────────────────────────── */
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.char-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  text-align: center;
+}
+
+.char-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.char-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Actions d'une vignette de personnage : « Modifier » et l'export, côte à côte.
+   Au doigt, les deux passent à 44 px — la carte est petite, ses boutons ne
+   doivent pas l'être. */
+.char-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.char-actions .btn.small svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (pointer: coarse) {
+  .char-actions .btn.small {
+    min-height: 44px;
+  }
+}
+
+.char-name {
+  font-weight: 600;
+  font-size: 14px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Gabarit commun de la vignette d'un personnage : rond, taille unique — que ce
+   soit l'initiale teintée ou sa photo. */
+.pastille,
+.pastille-image {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+
+.pastille {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent-ink);
+}
+
+/* Photo du personnage (capture 3D ou image envoyée) : recadrée dans le rond,
+   jamais déformée — le carré est déjà fait côté client, cover est une ceinture. */
+.pastille-image {
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* ── Listes (chats, résultats d'import) ───────────────────────────────── */
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  /* wrap : sur écran étroit, les boutons (Dupliquer/Supprimer) passent à la
+     ligne au lieu d'écraser le titre. */
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+}
+
+.item-row .item-main {
+  flex-basis: 100%;
+}
+
+@media (min-width: 480px) {
+  .item-row .item-main {
+    flex-basis: 0;
+  }
+}
+
+.item-row.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 0;
+  min-height: 44px;
+  color: var(--text);
+}
+
+.item-title {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Crayon de renommage d'une conversation — même discrétion que .msg-edit. */
+.item-edit {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.item-edit svg {
+  width: 14px;
+  height: 14px;
+}
+
+.item-edit:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Icône ALLUMÉE : la conversation porte déjà quelque chose (des notes de scène).
+   Visible sans survol — le double sélecteur l'emporte sur la règle souris. */
+.item-edit.on {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* Souris : le crayon n'existe qu'au survol de la rangée. */
+@media (pointer: fine) {
+  .item-edit {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .item-row:hover .item-edit,
+  .item-row:focus-within .item-edit,
+  .item-edit:focus-visible {
+    opacity: 0.55;
+  }
+  .item-row:hover .item-edit:hover,
+  .item-row:hover .item-edit.on,
+  .item-row:focus-within .item-edit.on {
+    opacity: 1;
+  }
+}
+
+/* Tactile : en demi-teinte (aucun survol pour le révéler), zone de toucher élargie.
+   34 × 32 autour d'un crayon de 14 px — la rangée, elle, ne grandit pas (son
+   bouton principal fait déjà 44 px de haut). */
+@media (pointer: coarse) {
+  .item-edit {
+    padding: 9px 10px;
+  }
+}
+
+/* Renommage inline : l'input prend exactement la place du titre. */
+.item-rename {
+  flex: 1;
+  min-width: 0;
+  flex-basis: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-height: 44px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.item-rename:focus {
+  outline: none;
+}
+
+@media (min-width: 480px) {
+  .item-rename {
+    flex-basis: 0;
+  }
+}
+
+.badge {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  flex: none;
+}
+
+.import-results {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.section h3 {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+}
+
+.section .hint {
+  display: block;
+  margin: 0 0 10px;
+}
+
+/* ── Mémoire ──────────────────────────────────────────────────────────── */
+
+.memory-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .memory-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.memory-files {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.memory-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  padding: 9px 12px;
+  min-height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.memory-file:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.memory-file.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.memory-files input {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.memory-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 260px;
+  line-height: 1.5;
+}
+
+/* ── Onglets + blocs de code (inspecteur) ─────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab.active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+}
+
+/* Téléphone : les quatre onglets de l'inspecteur (Prompt système / Payload
+   complet / Résumé / Scène) n'ont que 80 px chacun sur 339 px utiles — chaque
+   libellé partait sur deux lignes. Deux par ligne : libellés d'un seul tenant et
+   cibles franches. Trois onglets (sans résumé) : deux puis un, pleine largeur. */
+@media (max-width: 480px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  .tab {
+    flex: 1 1 calc(50% - 3px);
+  }
+}
+
+.code-block {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+/* Prompt du personnage dans l'inspecteur : l'allure du bloc de code qu'il
+   remplace — c'est le même texte, à la même place — mais c'est un CHAMP, et ça
+   doit se voir : poignée de redimensionnement et bordure d'accent au focus. */
+.prompt-edit {
+  display: block;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 220px;
+}
+
+.prompt-edit:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* ── Écran de connexion ───────────────────────────────────────────────── */
+
+.login-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--scene-bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 28px 24px calc(28px + env(safe-area-inset-bottom));
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 22px;
+  text-align: center;
+}
+
+.login-card h1 span {
+  color: var(--accent);
+}
+
+.login-card .hint {
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Mode visual novel ────────────────────────────────────────────────── */
+/* Le panneau s'efface au profit de la scène : plus de fond, de flou ni de
+   bordure — il ne reste que la boîte de dialogue et le composer, ancrés en bas.
+   Le fil complet n'est pas monté (App.tsx) : rien à masquer ici. */
+
+.chat-panel.vn {
+  top: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  justify-content: flex-end;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+}
+
+/* La scène reste manipulable (pan/zoom) partout où il n'y a pas de contrôle. */
+.chat-panel.vn,
+.chat-panel.vn .topbar {
+  pointer-events: none;
+}
+
+.chat-panel.vn .reply-actions {
+  pointer-events: none;
+}
+
+.chat-panel.vn .topbar nav,
+.chat-panel.vn .banner,
+.chat-panel.vn .compact-pill,
+.chat-panel.vn .vn-box,
+.chat-panel.vn .reply-actions .btn,
+.chat-panel.vn .reply-quote,
+.chat-panel.vn .empty-state,
+.chat-panel.vn .composer {
+  pointer-events: auto;
+}
+
+/* Bandeau de réponse posé sur la scène : opaque, comme les boutons ci-dessous. */
+.chat-panel.vn .reply-quote {
+  width: calc(100% - 24px);
+  max-width: 1000px;
+  margin: 0 auto 6px;
+  background: var(--panel-strong);
+  border-radius: 10px;
+}
+
+/* Une SEULE boîte de visual novel, trois sections de haut en bas :
+   dialogue → saisie → quick-menu (Régénérer/Continuer). L'ordre visuel est
+   réglé en flex `order` (le DOM garde son ordre logique), et les sections
+   basses partagent un ton légèrement plus sombre qui sert de séparateur. */
+.chat-panel.vn .vn-box {
+  order: 1;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding-bottom: 6px;
+}
+
+/* La boîte réserve sous le texte la bande où l'heure est ancrée (voir .vn-ts).
+   Un greeting n'a pas d'horodatage : la boîte reprend alors sa hauteur normale. */
+.chat-panel.vn .vn-box:has(.vn-ts) {
+  padding-bottom: 17px;
+}
+
+.chat-panel.vn .composer {
+  order: 2;
+}
+
+.chat-panel.vn .reply-actions {
+  order: 3;
+  width: var(--vn-w);
+  margin: 0 auto 10px;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 0 14px 7px;
+  background: rgba(19, 14, 29, 0.95); /* le ton sombre des sections basses */
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Saisie suivie du quick-menu : elle s'ouvre vers lui (pas d'arrondi bas). */
+.chat-panel.vn:has(.reply-actions) .composer {
+  margin-bottom: 0;
+  border-bottom: none;
+  border-radius: 0;
+}
+
+/* Infos de conversation dans la bande basse : la TopBar est masquée en mode VN,
+   le titre du chat et la jauge se rattrapent donc ici, à gauche — `flex: 1`
+   repousse les actions contre le bord droit. Le titre rétrécit avant tout le
+   reste (points de suspension) pour ne jamais bousculer les boutons. */
+.chat-panel.vn .reply-actions:has(.vn-info) {
+  padding-top: 4px;
+}
+
+.chat-panel.vn .vn-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.chat-panel.vn .vn-info-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* La bande laisse passer les gestes vers la scène : seule la jauge redevient
+   survolable, sinon son tooltip (~tokens / limite) serait inatteignable. */
+.chat-panel.vn .vn-info .ctx-badge {
+  pointer-events: auto;
+}
+
+.chat-panel.vn .reply-actions .btn {
+  flex: none; /* les libellés ne se coupent jamais : c'est .vn-info qui cède */
+  background: none;
+  border: none;
+  padding: 1px 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.chat-panel.vn .reply-actions .btn:hover {
+  color: var(--accent);
+}
+
+/* Feuilleter les variantes depuis la bande basse : en mode VN il n'y a pas de
+   bulle à survoler, ces flèches sont la seule prise. Elles se rangent contre
+   « Régénérer », qui est ce qui les produit — chevrons pleine hauteur pour une
+   cible de 40 px au doigt, sans que la bande ne grandisse (la bande fait déjà
+   cette hauteur avec ses libellés). */
+.chat-panel.vn .vn-variants {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+}
+
+.chat-panel.vn .vn-variants .btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.chat-panel.vn .vn-variants .btn:disabled {
+  opacity: 0.25;
+  color: var(--text-dim);
+  cursor: default;
+}
+
+.chat-panel.vn .vn-vcount {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* Téléphone : la bande basse ne tient plus sur UNE ligne. À 375 px la boîte fait
+   347 px (soit 319 px utiles) et trois libellés en capitales — RÉGÉNÉRER,
+   CONTINUER, RÉÉCOUTER quand la voix est active — en mangent près de 300 : la
+   jauge se faisait rogner par l'overflow de .vn-info. Les infos passent donc sur
+   leur propre ligne (titre enfin lisible, jauge entière) et les actions restent
+   groupées à droite, juste dessous. Au-delà, tout tient de front : rien ne bouge. */
+@media (max-width: 520px) {
+  .chat-panel.vn .reply-actions {
+    flex-wrap: wrap;
+    gap: 2px 14px;
+  }
+  .chat-panel.vn .vn-info {
+    flex-basis: 100%;
+  }
+}
+
+.chat-panel.vn .sheet-handle,
+.chat-panel.vn .topbar-name,
+.chat-panel.vn .topbar-sub {
+  display: none;
+}
+
+/* Dialogue masqué (le « cacher le chat » du mode VN, depuis le quick-menu) :
+   la scène seule à l'écran. Le quick-menu reste — c'est lui qui remet tout —
+   et les bannières d'état (backend injoignable, compaction) restent aussi :
+   masquer le dialogue ne doit jamais masquer une alerte. */
+.chat-panel.vn.collapsed .vn-box,
+.chat-panel.vn.collapsed .composer,
+.chat-panel.vn.collapsed .reply-actions,
+.chat-panel.vn.collapsed .reply-quote {
+  display: none;
+}
+
+.chat-panel.vn .topbar {
+  border-bottom: none;
+  padding: 0 12px 6px;
+}
+
+/* Icônes en COLONNE dans le coin haut droit (quick-menu de visual novel) :
+   la zone au-dessus de la boîte de dialogue reste entièrement à la scène.
+   z-index : le quick-menu est le SEUL jeu de commandes du mode VN. Sans lui il
+   se faisait peindre par la boîte de dialogue (elle le suit dans le DOM) et le
+   hit-test le confirmait — elementFromPoint renvoyait div.vn-text au centre de
+   « Réglages ». Quoi qu'il arrive maintenant, les icônes restent cliquables. */
+.chat-panel.vn .topbar nav {
+  position: fixed;
+  z-index: 5;
+  top: 12px;
+  right: 12px;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  padding: 2px;
+}
+
+/* En colonne la largeur de l'écran ne compte plus : les boutons reprennent leur
+   gabarit plein (la règle « téléphone » de la rangée les rétrécissait pour rien,
+   et un doigt mérite 44 px). Huit icônes (masquer-le-dialogue comprise) :
+   8 × 44 + 6 = 358 px, ça tient encore au-dessus du seuil court de 700 px. */
+.chat-panel.vn .topbar nav .icon-btn {
+  flex: none;
+  width: 44px;
+  max-width: none;
+}
+
+/* Écran COURT : la colonne ne tient plus, et ça se mesure. 7 × 44 + 6 = 314 px
+   d'icônes posées à 12 px du haut s'arrêtent à 326 px ; la boîte de dialogue est
+   ancrée en BAS et monte à leur rencontre sans jamais les voir. À 320 × 568,
+   hauteur par défaut : haut de boîte à 308,7 px, « Réglages » mangé sur
+   44 × 14,3 px ; à la hauteur maximale que le client autorise (0,4 × 568 =
+   227 px de texte) le haut tombe à 217 px et deux boutons entiers passent
+   dessous. Rien à gagner horizontalement : la boîte fait 100 % − 28 px = 292 px
+   de large, elle passe forcément sous une colonne collée à droite.
+   Les icônes repassent donc en RANGÉE : 50 px de haut au lieu de 314, pour une
+   occultation de la scène IDENTIQUE (296 × 50 = 14 800 px² contre 48 × 314 =
+   15 072 px²) et 246 px de dégagement sous elles au lieu de −14,3. Les boutons
+   se partagent alors 290 px à sept, soit 41,4 px chacun : la hauteur reste à
+   44 px et la largeur au-dessus du seuil tactile de 40 px.
+   Seuil à 700 px : il ne touche AUCUN des cinq formats mesurés sains (812, 768,
+   800, 910, 1024 px de haut) — la collision n'apparaît qu'en dessous de ~673 px. */
+@media (max-height: 700px) {
+  .chat-panel.vn .topbar nav {
+    left: 12px;
+    flex-direction: row;
+    /* 8 × 44 + 4 (retraits) + 2 (bordures) = 358 px : au-delà ce ne serait que
+       du vide. Marge gauche automatique = la rangée reste calée à droite.
+       À 360 px d'écran, les huit boutons se partagent 336 px : 42 px chacun,
+       toujours au-dessus du seuil tactile de 40. */
+    max-width: 358px;
+    margin-left: auto;
+  }
+  .chat-panel.vn .topbar nav .icon-btn {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 44px;
+  }
+}
+
+/* Saisie : section médiane de la boîte — même largeur, mêmes bords, ton
+   assombri, séparée du dialogue par un fin liseré. */
+.chat-panel.vn .composer {
+  width: var(--vn-w);
+  margin: 0 auto 10px;
+  padding: 7px 10px;
+  background: rgba(19, 14, 29, 0.95);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 12px 12px;
+}
+
+/* Boîte de dialogue façon visual novel : hauteur stable, étiquette de nom
+   chevauchant la bordure supérieure, texte défilant À L'INTÉRIEUR. */
+.vn-box {
+  position: relative; /* ancre de l'étiquette de nom et de la poignée */
+  flex: 0 1 auto;
+  width: var(--vn-w);
+  margin: 14px auto 0;
+  padding: 15px 18px 10px;
+  background: var(--panel-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Erreur en mode VN : rattachée à la boîte, jamais avalée */
+.vn-error {
+  margin: 6px auto 0;
+}
+
+/* Namebox : petite étiquette posée à cheval sur la bordure, en haut à gauche.
+   Le nom vient du personnage : on le borne à la boîte (moins son retrait gauche)
+   pour qu'un nom fleuve s'ellipse au lieu de partir hors écran sur téléphone. */
+.vn-name {
+  position: absolute;
+  top: -13px;
+  left: 16px;
+  max-width: calc(100% - 32px);
+  padding: 2px 14px;
+  font-family: 'Mulish', 'Segoe UI', Verdana, sans-serif; /* assortie au texte */
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: var(--panel-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Le texte occupe une hauteur de boîte VN constante et défile au-delà.
+   Centré dans les DEUX axes (safe : s'il déborde, il repart du haut et défile). */
+.vn-text {
+  /* Hauteur réglable à la poignée (--vn-text-h) : min = max, donc FIXE, et le
+     texte défile au-delà. Sans réglage, les valeurs d'origine (84 px → 24dvh).
+     Le plafond à 40dvh vaut pour les deux : une hauteur réglée sur un grand
+     écran ne mange pas tout un petit. */
+  min-height: min(var(--vn-text-h, 84px), 40dvh);
+  max-height: min(var(--vn-text-h, 24dvh), 40dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  /* Police façon visual novel : Mulish (voir le @font-face en tête de fichier),
+     un cran plus grande que l'interface, et le CONTOUR discret des dialogues à
+     la DDLC — quatre ombres serrées qui détourent chaque lettre + une portée
+     douce : le texte se pose sur la scène. */
+  font-family: 'Mulish', 'Segoe UI', Verdana, sans-serif;
+  /* Taille FLUIDE : 17 px conviennent à une boîte de 900 px, pas à un téléphone
+     où la boîte fait 347 px — cinq mots centrés par ligne, l'effet « affiche ».
+     Pente calibrée sur deux points : 14.5 px à 375 px d'écran, 17 px à 768 px
+     ((17 − 14.5) / (768 − 375) = 0.64vw, ordonnée 12.1 px), bornée aux deux
+     bouts. Le corps suit l'écran, pas la boîte : sur mobile la boîte EST
+     l'écran (100 % − 28 px), et sur desktop le plafond de 17 px vaut pour
+     toutes les largeurs de boîte. */
+  font-size: clamp(14.5px, 12.1px + 0.64vw, 17px);
+  font-weight: 500;
+  letter-spacing: 0.012em;
+  text-shadow:
+    -1px -1px 0 rgba(10, 6, 16, 0.42),
+    1px -1px 0 rgba(10, 6, 16, 0.42),
+    -1px 1px 0 rgba(10, 6, 16, 0.42),
+    1px 1px 0 rgba(10, 6, 16, 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* Heure de la réplique, dans le coin bas droit de la boîte (façon .bubble-ts).
+   HORS du flux, et ancrée sur la boîte et non sur .vn-text : le texte reste
+   centré sur ses deux axes et l'heure ne part pas avec le défilement interne. */
+.vn-ts {
+  position: absolute;
+  right: 18px;
+  bottom: 4px;
+  font-size: 9.5px;
+  line-height: 1;
+  color: var(--text-dim);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Points de chargement seuls (thinking) : centrés au milieu de la boîte. */
+.vn-text:has(> .typing) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Divers ───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation-duration: 0.01s !important;
+  }
+}

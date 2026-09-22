@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv
+venv/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Keys
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+logs/
+
+# IDE / System
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
+# Vendor: keep source, drop git metadata & heavy build artifacts
+vendor/**/.git/
+vendor/**/node_modules/
+vendor/**/.vercel/
+vendor/**/.github/
+vendor/**/tests/
+vendor/**/test-results/
+vendor/**/dist/
+vendor/**/build/
+vendor/**/*.map
+
+# 3D Assets & Temporary Unpack Directories
+avatar-farah/models/
+avatar-farah/raw/
+avatar-farah/temp/
+shell-bella/models/*
+!shell-bella/models/farah/
+shell-bella/models/farah/*
+!shell-bella/models/farah/farah_manifest.json
+*.rar
+*.fbx
+*.blend
+*.stl
+*.obj
+
+# VRM assets are large; track them with Git LFS instead
+*.vrm
+*.vrma
+*.glb
+*.gltf
+
+# Databases (Local conversations, memory, knowledge graph)
+*.db
+*.sqlite
+*.sqlite3
+
+# Local model weights (in Ollama, not git)
+models-gguf/*.gguf
+models-gguf/*.bin
+
+# Vendor heavy media
+vendor/**/*.gif
+vendor/**/*.mp4
+vendor/**/environments/*.gif
+vendor/**/screenshots/*.gif
+

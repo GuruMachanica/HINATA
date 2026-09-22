@@ -1,0 +1,59 @@
+/* HINATA Layout & Panel Containers - Strictly Under 60 LOC */
+.companion-shell {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  padding: 14px;
+}
+
+.avatar-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--status-online);
+  box-shadow: 0 0 10px var(--status-online);
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  background: rgba(41, 121, 255, 0.2);
+  border: 1px solid rgba(41, 121, 255, 0.4);
+  border-radius: 20px;
+  color: var(--accent-cyan);
+}
+
+.companion-shell.fullscreen-stage {
+  grid-template-columns: 1fr;
+}
+
+.companion-shell.fullscreen-stage .interaction-panel {
+  display: none;
+}

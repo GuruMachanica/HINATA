@@ -1,0 +1,77 @@
+# Dépendances / build
+node_modules/
+dist/
+
+# Données personnelles (chats, mémoire, config, prompts édités) — JAMAIS committées.
+data/
+
+# Filets d'avant-restauration : l'état complet archivé juste avant qu'une
+# restauration n'écrase quoi que ce soit (Réglages ▸ Données). Ce sont des
+# données personnelles, config.json compris — jamais committées, jamais
+# supprimées automatiquement non plus : c'est le seul retour en arrière.
+backups/
+
+# Instance SearXNG locale (settings.yml y compris) : contient un secret_key
+# généré à l'installation — jamais committée.
+searxng/
+
+# Presets personnels : ce sont des données perso (mémoire, prompt system, résumés,
+# character.json d'un personnage de test) — JAMAIS committés, purgés de l'historique.
+# Vos propres presets restent en local (copiés vers data/ au 1er lancement).
+# SEULE exception : presets/hana/, le personnage d'exemple livré avec l'app, écrit
+# pour n'être personnel à personne. N'ajoutez rien d'autre à cette liste.
+presets/*
+!presets/hana/
+
+# Modèles VRM et fonds : fichiers perso / licences tierces — non committés.
+vrm/*
+!vrm/README.md
+# SEULE exception : l'avatar d'exemple de Hana, le seul modèle 3D livré avec
+# l'app. Seed-san, du VRM Consortium (VirtualCast, Inc.), sous VRM Public
+# License 1.0 dont les conditions embarquées disent noir sur blanc
+# allowRedistribution: true — d'où le droit de le committer, que la quasi-
+# totalité des modèles VRM gratuits n'accordent PAS. La preuve de licence
+# recopiée vit à côté, dans Seed-san.LICENCE.txt : les deux se committent
+# ensemble ou pas du tout. N'ajoutez aucun autre modèle à cette liste.
+!vrm/Seed-san.vrm
+!vrm/Seed-san.LICENCE.txt
+backgrounds/*
+!backgrounds/README.md
+# Portraits 2D : images des cards importées (posées par l'app, pas à la main).
+portraits/*
+!portraits/README.md
+
+# À l'inverse, environments/ et vrma/ sont suivis VOLONTAIREMENT :
+# ce sont des assets sous licence libre (CC0/CC-BY, crédits dans CREDITS.md),
+# livrés avec l'app pour que tout le monde ait la même scène. Ne pas les ignorer,
+# et ne pas ajouter de règle par extension (*.vrma, *.glb…) qui les masquerait.
+
+# Sorties du diagnostic d'animations (devtools/) : des centaines de PNG et de
+# fiches, ~150 Mo, entièrement régénérables par « node devtools/diagnostic/diagnostic.mjs
+# --lot ». Un chemin de DOSSIER, pas une règle par extension (cf. ci-dessus).
+# Le reste de devtools/ est suivi, notes-visuelles.json compris : c'est le
+# commentaire écrit à la main devant les images, il ne se régénère pas.
+
+# Archives de sonde du banc (anim-lab) : régénérables, et surtout elles listent
+# les noms des .vrm PERSONNELS de l'utilisateur — jamais dans le dépôt. Motifs
+# ancrés au dossier, pas de règle par extension (garde-fou habituel).
+devtools/anim-lab/sonde-*.json
+devtools/anim-lab/matrice-*.json
+devtools/diagnostic-out/
+
+# Empreinte du décor jetable de la matrice de scène : l'inventaire de
+# environments/ relevé AVANT la pose d'un .glb d'essai, pour savoir quoi retirer.
+# Elle vit le temps d'un essai et s'efface au retrait. Chemin ancré, comme
+# au-dessus.
+devtools/matrice-scene/.decor-jetable.json
+
+*.log
+.env
+.env.*
+
+# Archives personnelles posées à la racine (collections de modèles, exports) :
+# jamais dans le dépôt. Chemins ancrés à la racine — pas des règles par extension
+# globales (cf. garde-fou ci-dessus).
+/*.zip
+/*.7z
+/*.7z.*
