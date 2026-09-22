@@ -22,7 +22,7 @@ from pathlib import Path
 log = logging.getLogger("hinata.brain")
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-HERMES_DIR = ROOT_DIR / "vendor" / "hermes-agent"
+HERMES_DIR = ROOT_DIR / "hermes-agent"
 SOUL_PATH = ROOT_DIR / "hermes-core" / "config" / "SOUL.md"
 
 DEFAULT_ENDPOINT = os.getenv("HERMES_MODEL_ENDPOINT", "http://127.0.0.1:11434/v1")

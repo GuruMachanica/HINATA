@@ -45,16 +45,24 @@ logs/
 Thumbs.db
 Desktop.ini
 
-# Vendor: keep source, drop git metadata & heavy build artifacts
-vendor/**/.git/
-vendor/**/node_modules/
-vendor/**/.vercel/
-vendor/**/.github/
-vendor/**/tests/
-vendor/**/test-results/
-vendor/**/dist/
-vendor/**/build/
-vendor/**/*.map
+# Engine & Retired: drop git metadata & heavy build artifacts
+hermes-agent/**/.git/
+hermes-agent/**/node_modules/
+hermes-agent/**/.vercel/
+hermes-agent/**/.github/
+hermes-agent/**/tests/
+hermes-agent/**/test-results/
+hermes-agent/**/dist/
+hermes-agent/**/build/
+hermes-agent/**/*.map
+
+retired/**/.git/
+retired/**/node_modules/
+retired/**/.vercel/
+retired/**/.github/
+retired/**/dist/
+retired/**/build/
+retired/**/*.map
 
 # 3D Assets & Temporary Unpack Directories
 avatar-farah/models/
@@ -86,9 +94,13 @@ shell-bella/models/farah/*
 models-gguf/*.gguf
 models-gguf/*.bin
 
-# Vendor heavy media
+# Heavy media & animation assets
+retired/**/*.gif
+retired/**/*.mp4
+retired/**/environments/*.gif
+retired/**/screenshots/*.gif
+hermes-agent/**/*.gif
+hermes-agent/**/*.mp4
 vendor/**/*.gif
 vendor/**/*.mp4
-vendor/**/environments/*.gif
-vendor/**/screenshots/*.gif
 

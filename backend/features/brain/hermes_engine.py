@@ -15,7 +15,7 @@ log = logging.getLogger("hinata.hermes")
 
 
 class HermesEngine:
-    """Lazy-init wrapper around vendor/hermes-agent; falls back to raw chat."""
+    """Lazy-init wrapper around hermes-agent; falls back to raw chat."""
 
     def __init__(self) -> None:
         self._agent = None
@@ -29,7 +29,7 @@ class HermesEngine:
         if self._agent is not None or self._failed:
             return self._agent
         if not HERMES_DIR.exists():
-            log.warning("vendor/hermes-agent missing — fallback chat only")
+            log.warning("hermes-agent missing — fallback chat only")
             self._failed = True
             return None
         sys.path.insert(0, str(HERMES_DIR))

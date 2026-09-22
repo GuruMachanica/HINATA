@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 BACKEND_DIR = ROOT_DIR / "backend"
 DB_PATH = BACKEND_DIR / "hinata.db"
-HERMES_DIR = ROOT_DIR / "vendor" / "hermes-agent"
+HERMES_DIR = ROOT_DIR / "hermes-agent"
 SOUL_PATH = ROOT_DIR / "hermes-core" / "config" / "SOUL.md"
 NEURAL_TTS_PY = ROOT_DIR / "voice" / "neural_tts.py"
 FRONTEND_DIST = ROOT_DIR / "frontend" / "dist"

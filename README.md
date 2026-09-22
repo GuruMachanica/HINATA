@@ -87,12 +87,11 @@ HINATA/
 ├── backend/            # FastAPI: brain, memory, KG, WS/REST (one process)
 ├── frontend/           # React + Vite source (builds to dist/)
 ├── desktop-shell/      # Electron transparent overlay
+├── hermes-agent/       # NousResearch engine (the brain's runtime)
 ├── hermes-core/        # Persona (SOUL.md) + retained proactive/diagnostics modules
 ├── voice/              # edge-tts neural synthesis
 ├── models-gguf/        # Modelfile for hinata-brain (heretic Qwen-3-VL)
-└── vendor/
-    ├── hermes-agent/   # NousResearch engine (the brain's runtime)
-    └── _retired/       # bella, arpa-avatar, hanami, liqu — merged & retired
+└── retired/            # bella, arpa-avatar, hanami, liqu — heritage & reference codebases
 ```
 
 ## Credits
