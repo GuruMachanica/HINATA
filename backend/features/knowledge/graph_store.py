@@ -98,3 +98,23 @@ class KnowledgeGraphStore:
                 "SELECT COUNT(*) c FROM triples WHERE source='stated'"
             ).fetchone()["c"],
         }
+
+    def clear(self, entity: str | None = None) -> int:
+        conn = db.connect()
+        if entity and entity.strip().lower() != "all":
+            target = f"%{entity.lower().strip()}%"
+            c1 = conn.execute(
+                "DELETE FROM triples WHERE LOWER(subject) LIKE ? OR LOWER(object) LIKE ?",
+                (target, target),
+            ).rowcount
+            c2 = conn.execute(
+                "DELETE FROM entities WHERE LOWER(name) LIKE ?",
+                (target,),
+            ).rowcount
+            conn.commit()
+            return c1 + c2
+        else:
+            c1 = conn.execute("DELETE FROM triples").rowcount
+            c2 = conn.execute("DELETE FROM entities").rowcount
+            conn.commit()
+            return c1 + c2

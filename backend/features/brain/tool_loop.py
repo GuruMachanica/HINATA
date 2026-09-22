@@ -6,6 +6,7 @@ Protocol (works with ANY chat model, no native function-calling needed):
 """
 from __future__ import annotations
 
+import ast
 import json
 import logging
 import re
@@ -19,6 +20,7 @@ log = logging.getLogger("hinata.toolloop")
 
 _JSON_RE = re.compile(r"\{\s*\"tool\".*?\}\s*$|\{\s*\"tool\".*?\}", re.DOTALL)
 _TOOL_KEY_RE = re.compile(r"\"tool\"\s*:")
+_BRACKET_CALL_RE = re.compile(r"\[([a-zA-Z_0-9]+)\s*\((.*?)\)\s*\]|(?:\b|^)([a-zA-Z_0-9]+)\s*\((.*?)\)", re.DOTALL)
 
 
 def _extract_json_objects(text: str) -> List[str]:
@@ -53,10 +55,16 @@ class TurnTrace:
 
 
 def _strip_calls(text: str) -> str:
-    """Remove tool-call JSON blobs from a final answer."""
+    """Remove tool-call JSON blobs, bracket calls, and stray formatting artifacts."""
     cleaned = text
     for blob in _extract_json_objects(text):
         cleaned = cleaned.replace(blob, "")
+    # Remove bracket tool invocations like [query_knowledge("...")]
+    cleaned = re.sub(r"\[[a-zA-Z_0-9]+\s*\([^\]]*\)\s*\]", "", cleaned)
+    # Remove empty or lonely markdown bold markers like ** or ** **
+    cleaned = re.sub(r"\*\*(\s*)\*\*", r"\1", cleaned)
+    cleaned = re.sub(r"\s+\*\*(?=\s|$)", " ", cleaned)
+    cleaned = re.sub(r"(?<=\s|^)\*\*\s+", " ", cleaned)
     return cleaned.strip() or "Done."
 
 
@@ -64,9 +72,8 @@ class AgenticToolLoop:
     def __init__(self, tools: ToolRegistry) -> None:
         self.tools = tools
 
-    @staticmethod
-    def extract_call(text: str) -> dict | None:
-        """Find a tool-call JSON object in the reply (strict or embedded)."""
+    def extract_call(self, text: str) -> dict | None:
+        """Find a tool-call JSON object or bracket call in the reply."""
         candidate = text.strip()
         blobs = [candidate, *_extract_json_objects(candidate)]
         for blob in blobs:
@@ -77,7 +84,40 @@ class AgenticToolLoop:
             if isinstance(parsed, dict) and "tool" in parsed:
                 parsed["tool"] = str(parsed["tool"]).replace("()", "").strip()
                 return parsed
+
+        # Fallback: check for bracket calls like [web_search("query")] or [query_knowledge("term")]
+        for m in re.finditer(r"\[([a-zA-Z_0-9]+)\s*\((.*?)\)\s*\]", candidate):
+            fn_name = m.group(1).strip()
+            args_raw = m.group(2).strip()
+            tool = self.tools.get(fn_name)
+            if tool:
+                args = self._parse_call_args(args_raw, tool)
+                return {"tool": fn_name, "args": args}
+
         return None
+
+    def _parse_call_args(self, args_raw: str, tool) -> dict:
+        if not args_raw:
+            return {}
+        kwargs = {}
+        positional = []
+        try:
+            tree = ast.parse(f"f({args_raw})").body[0].value  # type: ignore
+            for arg in tree.args:
+                positional.append(ast.literal_eval(arg))
+            for kw in tree.keywords:
+                kwargs[kw.arg] = ast.literal_eval(kw.value)
+        except Exception:
+            cleaned = args_raw.strip().strip("'\"")
+            if cleaned:
+                positional.append(cleaned)
+
+        if positional:
+            param_names = [p.name for p in tool.params]
+            for name, val in zip(param_names, positional):
+                if name not in kwargs:
+                    kwargs[name] = val
+        return kwargs
 
     def run(self, query: str, system: str, chat) -> tuple[str, TurnTrace]:
         """Drive up to MAX_TOOL_ROUNDS tool rounds; returns (final_text, trace)."""

@@ -66,6 +66,12 @@ class Persona:
         clean = re.sub(r"\*[^*]+\*", "", clean).strip()
         # Strip all emojis and emoticons
         clean = EMOJI_RE.sub("", clean)
+        # Strip raw tool calls or pseudo calls in brackets like [query_knowledge("...")]
+        clean = re.sub(r"\[[a-zA-Z_0-9]+\([^\]]*\)\]", "", clean)
+        # Strip empty bold or dangling asterisks e.g. ** being developed
+        clean = re.sub(r"\*\*(\s*)\*\*", r"\1", clean)
+        clean = re.sub(r"\s+\*\*(?=\s|$)", " ", clean)
+        clean = re.sub(r"(?<=\s|^)\*\*\s+", " ", clean)
         # Strip outer enclosing quotes if whole message is wrapped in quotes
         if ((clean.startswith('"') and clean.endswith('"')) or
             (clean.startswith('“') and clean.endswith('”'))) and len(clean) > 2:

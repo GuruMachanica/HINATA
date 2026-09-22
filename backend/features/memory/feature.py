@@ -39,6 +39,11 @@ class MemoryFeature(BaseFeature):
         self.bus.subscribe("memory.append", self._on_append)
         self.bus.subscribe("memory.search.query", self._on_search)
         self.bus.subscribe("memory.recent.query", self._on_recent)
+        self.bus.subscribe("memory.clear", self._on_clear)
+
+    def _on_clear(self, event: Event) -> None:
+        count = self.store.clear()
+        event.payload["cleared_count"] = count
 
     def _on_append(self, event: Event) -> None:
         self.store.append(

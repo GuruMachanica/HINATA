@@ -23,8 +23,13 @@ class KnowledgeFeature(BaseFeature):
         self.bus.subscribe("knowledge.fact", self._on_fact)
         self.bus.subscribe("knowledge.context", self._on_context)
         self.bus.subscribe("knowledge.observe", self._on_observe)
+        self.bus.subscribe("knowledge.clear", self._on_clear)
 
     # -- bus handlers ---------------------------------------------------------
+    def _on_clear(self, event: Event) -> None:
+        entity = event.payload.get("entity")
+        count = self.store.clear(entity=entity)
+        event.payload["cleared_count"] = count
     def _on_search(self, event: Event) -> None:
         event.payload["results"] = self.store.search(
             event.payload.get("term", ""), event.payload.get("limit", 8),

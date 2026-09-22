@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from typing import Any
 
-from ..base import Tool, ToolResult
+from ..base import Tool, ToolParam, ToolResult
 
 
 class CurrentTimeTool(Tool):
@@ -72,3 +72,66 @@ class BatteryTool(Tool):
         except Exception as exc:
             return ToolResult(ok=False, output=f"battery query failed: {exc}")
         return ToolResult(ok=False, output="no battery detected")
+
+
+class OpenAppOrUrlTool(Tool):
+    name = "open_app_or_url"
+    description = (
+        "Open any desktop application, game, or website/URL. "
+        "Supports apps like Chrome, Spotify, Steam, Calculator, Notepad, VS Code, Discord, File Explorer, "
+        "or websites like https://youtube.com, https://google.com, https://github.com."
+    )
+    params = [
+        ToolParam("target", "string", "Application name (e.g. 'chrome', 'spotify', 'steam', 'calc', 'notepad', 'code') or web URL"),
+    ]
+
+    def run(self, target: str = "", **_: Any) -> ToolResult:
+        import os
+        import webbrowser
+
+        if not target or not target.strip():
+            return ToolResult(ok=False, output="Missing target to open")
+
+        t = target.strip()
+
+        # Handle URLs
+        if t.startswith(("http://", "https://")) or t.startswith("www.") or (
+            ("." in t) and not t.endswith((".exe", ".bat", ".cmd", ".ps1", ".txt", ".py"))
+            and ("/" in t or t.endswith((".com", ".org", ".net", ".io", ".dev", ".edu", ".gov")))
+        ):
+            url = t if t.startswith(("http://", "https://")) else f"https://{t}"
+            try:
+                webbrowser.open(url)
+                return ToolResult(ok=True, output=f"Opened website in browser: {url}")
+            except Exception as exc:
+                return ToolResult(ok=False, output=f"Failed to open URL '{url}': {exc}")
+
+        # Windows known protocol / app aliases
+        APP_ALIASES = {
+            "spotify": "spotify:",
+            "steam": "steam:",
+            "calculator": "calc.exe",
+            "calc": "calc.exe",
+            "notepad": "notepad.exe",
+            "code": "code",
+            "vscode": "code",
+            "explorer": "explorer.exe",
+            "files": "explorer.exe",
+            "settings": "ms-settings:",
+            "terminal": "wt.exe",
+        }
+        cmd_target = APP_ALIASES.get(t.lower(), t)
+
+        # Native Windows os.startfile
+        try:
+            os.startfile(cmd_target)
+            return ToolResult(ok=True, output=f"Opened application: {target}")
+        except Exception:
+            pass
+
+        # Subprocess fallback
+        try:
+            subprocess.Popen(f'start "" "{cmd_target}"', shell=True)
+            return ToolResult(ok=True, output=f"Launched application: {target}")
+        except Exception as exc:
+            return ToolResult(ok=False, output=f"Failed to launch '{target}': {exc}")

@@ -56,3 +56,32 @@ class RememberFactTool(Tool):
         bus.emit("knowledge.fact", {"relation": relation, "object": object, "confidence": 0.95},
                  source=self.name)
         return ToolResult(ok=True, output=f"remembered: user {relation} {object}")
+
+
+class ResetKnowledgeTool(Tool):
+    name = "reset_knowledge"
+    description = (
+        "Delete or reset facts in the knowledge base or memory. "
+        "Use target='all' to purge all knowledge and past conversation history, "
+        "or pass a specific keyword/topic to delete only matching entries."
+    )
+    params = [
+        type("P", (), {"name": "target", "type": "string", "description": "'all' or specific entity/topic name", "required": False})(),
+    ]
+
+    def run(self, target: str = "all", **_: Any) -> ToolResult:
+        from ....core.event_bus import bus
+        clean_target = (target or "all").strip().lower()
+        resp_kg = bus.emit("knowledge.clear", {"entity": clean_target}, source=self.name)
+        kg_cleared = resp_kg.payload.get("cleared_count", 0)
+
+        mem_cleared = 0
+        if clean_target in ("all", "memory", "everything", "history"):
+            resp_mem = bus.emit("memory.clear", {}, source=self.name)
+            mem_cleared = resp_mem.payload.get("cleared_count", 0)
+
+        return ToolResult(
+            ok=True,
+            output=f"Knowledge base reset successfully. Cleared {kg_cleared} knowledge items and {mem_cleared} conversation turns.",
+            data={"kg_cleared": kg_cleared, "memory_cleared": mem_cleared},
+        )

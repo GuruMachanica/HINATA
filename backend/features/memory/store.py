@@ -68,3 +68,9 @@ class MemoryStore:
         total = conn.execute("SELECT COUNT(*) c FROM messages").fetchone()["c"]
         sessions = conn.execute("SELECT COUNT(DISTINCT session_id) c FROM messages").fetchone()["c"]
         return {"total_messages": total, "sessions": sessions}
+
+    def clear(self) -> int:
+        conn = db.connect()
+        c = conn.execute("DELETE FROM messages").rowcount
+        conn.commit()
+        return c

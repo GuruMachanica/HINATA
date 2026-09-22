@@ -1,9 +1,10 @@
 """Builtin tool registration — import side-effect registers everything."""
 from ..registry import registry
-from .system_tools import CurrentTimeTool, SystemInfoTool, BatteryTool
+from .system_tools import CurrentTimeTool, SystemInfoTool, BatteryTool, OpenAppOrUrlTool
 from .file_tools import ReadFileTool, ListDirTool, WriteFileTool
 from .shell_tool import ShellTool, PythonEvalTool
-from .memory_tools import RecallMemoryTool, KnowledgeQueryTool, RememberFactTool
+from .memory_tools import RecallMemoryTool, KnowledgeQueryTool, RememberFactTool, ResetKnowledgeTool
+from .web_tools import WebSearchTool
 
 
 def _register_all() -> None:
@@ -11,6 +12,8 @@ def _register_all() -> None:
         CurrentTimeTool(),
         SystemInfoTool(),
         BatteryTool(),
+        OpenAppOrUrlTool(),
+        WebSearchTool(),
         ReadFileTool(),
         ListDirTool(),
         WriteFileTool(),
@@ -19,6 +22,7 @@ def _register_all() -> None:
         RecallMemoryTool(),
         KnowledgeQueryTool(),
         RememberFactTool(),
+        ResetKnowledgeTool(),
     )
 
 
