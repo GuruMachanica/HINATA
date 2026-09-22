@@ -113,11 +113,33 @@ export class VRMStage {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, (container.clientWidth || 440) / (container.clientHeight || 520), 0.05, 50);
-    this.camera.position.set(0, 1.3, 3.0);
+    this.camera.position.set(0, 0.82, 3.15);
+    this.camera.lookAt(0, 0.72, 0);
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x444455, 2.0));
     const key = new THREE.DirectionalLight(0xfffaed, 1.5); key.position.set(1, 2, 2.5); this.scene.add(key);
     const rim = new THREE.DirectionalLight(0x00e5ff, 0.6); rim.position.set(-1, 1.8, -1.6); this.scene.add(rim);
+
+    // Floor standing shadow disc so avatar is grounded, not floating
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 128; shadowCanvas.height = 128;
+    const sCtx = shadowCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 60);
+    grad.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
+    grad.addColorStop(0.3, 'rgba(0, 0, 0, 0.55)');
+    grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    sCtx.fillStyle = grad;
+    sCtx.beginPath(); sCtx.arc(64, 64, 64, 0, Math.PI * 2); sCtx.fill();
+    const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+    const shadowGeo = new THREE.PlaneGeometry(1.2, 1.2);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTexture, transparent: true, opacity: 0.85, depthWrite: false,
+    });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.y = 0.002;
+    this.scene.add(shadowMesh);
 
     this.group = new THREE.Group();
     this.scene.add(this.group);
@@ -361,7 +383,7 @@ export class VRMStage {
       this._applyPose(dt, t);
       this._updateFace(dt, t);
     }
-    this.camera.lookAt(0, 1.25, 0);
+    this.camera.lookAt(0, 0.72, 0);
     this.renderer.render(this.scene, this.camera);
   }
 }

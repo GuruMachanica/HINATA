@@ -30,6 +30,9 @@ _FALLBACK = (
 )
 
 
+EMOJI_RE = re.compile(r"[\U00010000-\U0010ffff\u200d\u2300-\u23ff\u2600-\u27bf\ufe0f]")
+
+
 class Persona:
     def __init__(self) -> None:
         self._soul: str | None = None
@@ -61,6 +64,8 @@ class Persona:
         clean = MOOD_RE.sub("", reply).strip()
         # Strip 3rd person roleplay stage directions like *HINATA twitches...* or *sighs*
         clean = re.sub(r"\*[^*]+\*", "", clean).strip()
+        # Strip all emojis and emoticons
+        clean = EMOJI_RE.sub("", clean)
         # Strip outer enclosing quotes if whole message is wrapped in quotes
         if ((clean.startswith('"') and clean.endswith('"')) or
             (clean.startswith('“') and clean.endswith('”'))) and len(clean) > 2:

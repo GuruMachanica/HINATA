@@ -19,21 +19,46 @@ const MODEL_URL = GATEWAY_WS.replace('ws', 'http') + '/models/vrm/hinata.vrm';
 const stageEl = document.getElementById('stage');
 const bubbleEl = document.getElementById('speech-bubble');
 
+const STAGE_W = 440;
+const STAGE_H = 580;
+
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(STAGE_W, STAGE_H);
 renderer.setClearColor(0x000000, 0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 stageEl.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 0.05, 50);
-camera.position.set(0, 1.3, 3.2);
+const camera = new THREE.PerspectiveCamera(30, STAGE_W / STAGE_H, 0.05, 50);
+camera.position.set(0, 0.82, 3.15);
+camera.lookAt(0, 0.72, 0);
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444455, 2.2));
 const key = new THREE.DirectionalLight(0xfffaed, 1.6); key.position.set(1.0, 2.0, 2.5); scene.add(key);
 const fill = new THREE.DirectionalLight(0xdbe8ff, 0.6); fill.position.set(-1.8, 0.8, 1.2); scene.add(fill);
 const rim = new THREE.DirectionalLight(0x00e5ff, 0.5); rim.position.set(0, 1.5, -2.0); scene.add(rim);
+
+// Floor standing shadow disc so avatar is grounded, not floating
+const shadowCanvas = document.createElement('canvas');
+shadowCanvas.width = 128; shadowCanvas.height = 128;
+const sCtx = shadowCanvas.getContext('2d');
+const grad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 60);
+grad.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
+grad.addColorStop(0.3, 'rgba(0, 0, 0, 0.55)');
+grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+sCtx.fillStyle = grad;
+sCtx.beginPath(); sCtx.arc(64, 64, 64, 0, Math.PI * 2); sCtx.fill();
+const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+const shadowGeo = new THREE.PlaneGeometry(1.2, 1.2);
+const shadowMat = new THREE.MeshBasicMaterial({
+  map: shadowTexture, transparent: true, opacity: 0.85, depthWrite: false,
+});
+const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+shadowMesh.rotation.x = -Math.PI / 2;
+shadowMesh.position.y = 0.002;
+scene.add(shadowMesh);
 
 const modelGroup = new THREE.Group();
 scene.add(modelGroup);
@@ -43,9 +68,9 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.register((parser) => new VRMLoaderPlugin(parser));
 
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = STAGE_W / STAGE_H;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(STAGE_W, STAGE_H);
 });
 
 async function loadModel(url) {
@@ -429,7 +454,8 @@ stageEl.addEventListener('mousedown', pokeReaction);
  * Speech bubble
  * ------------------------------------------------------------------ */
 function showBubble(text) {
-  bubbleEl.textContent = text;
+  const clean = (text || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '').trim();
+  bubbleEl.textContent = clean;
   bubbleEl.classList.add('show');
   clearTimeout(showBubble._t);
   showBubble._t = setTimeout(() => bubbleEl.classList.remove('show'), 4200);
