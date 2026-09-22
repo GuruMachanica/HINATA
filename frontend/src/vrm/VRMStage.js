@@ -158,6 +158,13 @@ export class VRMStage {
   }
 
   _initAudio() {
+    const unlock = () => {
+      if (this._ctx && this._ctx.state === 'suspended') {
+        this._ctx.resume().catch(() => {});
+      }
+    };
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
     try {
       this._ctx = new (window.AudioContext || window.webkitAudioContext)();
       this._analyser = this._ctx.createAnalyser();
@@ -180,10 +187,13 @@ export class VRMStage {
     VRMUtils.rotateVRM0(vrm);
     this.group.add(vrm.scene);
     this.vrm = vrm;
-    const lookTarget = new THREE.Object3D();
-    lookTarget.position.set(0, 1.35, 5);
-    vrm.scene.add(lookTarget);
-    if (vrm.lookAt) vrm.lookAt.target = lookTarget;
+
+    // Attach gaze target
+    const target = new THREE.Object3D();
+    target.position.set(0, 1.35, 5);
+    this.group.add(target);
+    this._gazeTarget = target;
+    if (vrm.lookAt) vrm.lookAt.target = target;
   }
 
   setBehavior(b) {
@@ -202,10 +212,16 @@ export class VRMStage {
 
   playAudio(dataUri) {
     if (!dataUri) return;
+    if (this._ctx && this._ctx.state === 'suspended') {
+      this._ctx.resume().catch(() => {});
+    }
     this._audioEl.src = dataUri;
     this._audioEl.onplaying = () => { this.speaking = true; };
     this._audioEl.onended = () => { this.speaking = false; this._audioLevel = 0; };
-    this._audioEl.play().catch(() => { this.speaking = false; });
+    this._audioEl.play().catch((err) => {
+      console.warn('[VRMStage] audio play failed', err);
+      this.speaking = false;
+    });
   }
 
   stopAudio() {

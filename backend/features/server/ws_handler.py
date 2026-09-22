@@ -30,6 +30,23 @@ class WSChatHandler:
             "mood": result["mood"], "expression": meta["expression"],
             "behavior": meta.get("behavior"),
         })
+
+        # Voice synthesis — stream speech_chunk to frontend and desktop overlay
+        try:
+            from ...features.voice import VoiceFeature
+            from ...core.base_feature import get
+            voice: VoiceFeature = get(VoiceFeature.name)
+            if voice and result.get("reply"):
+                audio_uri = await _to_thread(voice.synthesize, result["reply"])
+                if audio_uri:
+                    await conn.send("speech_chunk", {
+                        "text": result["reply"],
+                        "audio": audio_uri,
+                    })
+        except Exception as exc:
+            import logging
+            logging.getLogger("hinata.server").warning("TTS synthesis failed: %s", exc)
+
         await conn.send_state("online")
 
 

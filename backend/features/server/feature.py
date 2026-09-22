@@ -59,11 +59,14 @@ class ServerFeature(BaseFeature):
                 if msg.get("type") == "chat":
                     await self.chat.handle_chat(conn, (msg.get("payload") or {}).get("query", ""))
                 elif msg.get("type") == "tts_request":
+                    import asyncio
                     from ...features.voice import VoiceFeature
                     from ...core.base_feature import get
                     text = (msg.get("payload") or {}).get("text", "")
-                    audio = get(VoiceFeature.name).synthesize(text)
-                    if audio:
-                        await conn.send("speech_chunk", {"text": text, "audio": audio})
+                    voice = get(VoiceFeature.name)
+                    if voice and text:
+                        audio = await asyncio.to_thread(voice.synthesize, text)
+                        if audio:
+                            await conn.send("speech_chunk", {"text": text, "audio": audio})
         except (WebSocketDisconnect, Exception):
             self.log.info("client disconnected")
