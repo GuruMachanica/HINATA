@@ -36,45 +36,67 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force product/engine | Out-Null
 
-          # Resolve the current stable llama.cpp Windows Vulkan release
-          # instead of pinning an asset that can disappear or be renamed.
+          # The current llama.cpp "latest" release can occasionally be source-only.
+          # Walk recent releases and select the newest release that actually
+          # publishes a Windows x64 Vulkan binary.
           $headers = @{ "User-Agent" = "HINATA-release-workflow" }
-          $release = Invoke-RestMethod `
-            -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" `
-            -Headers $headers
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=100" -Headers $headers
 
-          $asset = $release.assets |
-            Where-Object { $_.name -match '^llama-b[0-9]+-bin-win-vulkan-x64\.zip$' } |
-            Select-Object -First 1
+          $release = $null
+          $asset = $null
 
-          if (-not $asset) {
-            $names = ($release.assets | Select-Object -ExpandProperty name) -join ", "
-            throw "No Windows Vulkan llama.cpp asset found in latest release $($release.tag_name). Assets: $names"
+          foreach ($candidate in $releases) {
+            $candidateAsset = $candidate.assets |
+              Where-Object { $_.name -match '^llama-(v[^-]+|b[0-9]+)-bin-win-vulkan-x64\.zip$' } |
+              Select-Object -First 1
+
+            if ($candidateAsset) {
+              $release = $candidate
+              $asset = $candidateAsset
+              break
+            }
           }
 
-          Write-Host "Using llama.cpp $($release.tag_name): $($asset.name)"
-          Invoke-WebRequest `
-            -Uri $asset.browser_download_url `
-            -Headers $headers `
-            -OutFile engine.zip
+          if (-not $asset) {
+            throw "No Windows x64 Vulkan llama.cpp binary found in the latest 100 releases."
+          }
+
+          Write-Host "Using llama.cpp release $($release.tag_name): $($asset.name)"
+
+          Invoke-WebRequest -Uri $asset.browser_download_url -Headers $headers -OutFile engine.zip
 
           if ((Get-Item engine.zip).Length -lt 1048576) {
             throw "Downloaded llama.cpp archive is unexpectedly small."
           }
 
           Expand-Archive engine.zip -DestinationPath engine-tmp
-          $src = (Get-ChildItem engine-tmp -Recurse -File -Filter llama-server.exe | Select-Object -First 1).Directory.FullName
-          if (-not $src) { throw "llama-server.exe not found in downloaded archive" }
 
-          $keep = @('llama-server.exe','ggml.dll','ggml-base.dll','ggml-cpu.dll',
-                    'ggml-vulkan.dll','SDL2.dll','libcurl-x64.dll',
-                    'libllama.dll','llama.dll','mtmd.dll','libogg.dll','libvorbis.dll')
-          foreach ($f in $keep) {
-            $p = Join-Path $src $f
-            if (Test-Path $p) { Copy-Item $p product/engine/ -Force }
+          $server = Get-ChildItem engine-tmp -Recurse -File -Filter llama-server.exe | Select-Object -First 1
+          if (-not $server) {
+            throw "llama-server.exe not found in $($asset.name)"
           }
-          if (-not (Test-Path product/engine/llama-server.exe)) { throw "llama-server.exe was not staged" }
+
+          $src = $server.Directory.FullName
+          Copy-Item $server.FullName product/engine/ -Force
+
+          # Binary layouts change between llama.cpp releases. Ship every DLL
+          # published beside llama-server.exe instead of a brittle allowlist.
+          Get-ChildItem $src -File -Filter "*.dll" | ForEach-Object {
+            Copy-Item $_.FullName product/engine/ -Force
+          }
+
+          if (-not (Test-Path product/engine/llama-server.exe)) {
+            throw "llama-server.exe was not staged"
+          }
+
+          $dllCount = (Get-ChildItem product/engine -File -Filter "*.dll").Count
+          if ($dllCount -eq 0) {
+            throw "No llama.cpp DLLs were staged"
+          }
+
+          Write-Host "Staged llama-server.exe and $dllCount DLLs."
           Remove-Item engine.zip, engine-tmp -Recurse -Force
+
       - name: Stage bundled models (download Q4_K_M + mmproj)
         shell: pwsh
         run: |
