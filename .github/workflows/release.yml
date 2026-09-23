@@ -31,6 +31,24 @@ jobs:
           npm install
           npm run build
 
+      - name: Stage bundled engine (llama.cpp Vulkan)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force product/engine | Out-Null
+          Invoke-WebRequest -Uri "${{ env.LLAMA_ZIP }}" -OutFile engine.zip
+          Expand-Archive engine.zip -DestinationPath engine-tmp
+          $src = (Get-ChildItem engine-tmp -Recurse -Directory | Select-Object -First 1).FullName
+          $keep = @('llama-server.exe','ggml.dll','ggml-base.dll','ggml-cpu.dll',
+                    'ggml-vulkan.dll','SDL2.dll','libcurl-x64.dll',
+                    'libllama.dll','llama.dll','mtmd.dll','libogg.dll','libvorbis.dll')
+          foreach ($f in $keep) {
+            $p = Join-Path $src $f
+            if (Test-Path $p) { Copy-Item $p product/engine/ }
+          }
+          Remove-Item engine.zip, engine-tmp -Recurse -Force
+        env:
+          LLAMA_ZIP: https://github.com/ggml-org/llama.cpp/releases/download/b11128/llama-b11128-bin-win-vulkan-x64.zip
+
       - name: Stage bundled models (download Q4_K_M + mmproj)
         shell: pwsh
         run: |
@@ -55,9 +73,15 @@ jobs:
         shell: pwsh
         run: |
           Start-Process -FilePath dist/hinata-backend.exe -PassThru | Out-Null
-          Start-Sleep -Seconds 20
-          $r = try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ -TimeoutSec 5 } catch { $_.Exception.Response }
-          if (-not $r) { throw "exe did not serve HTTP" }
+          $ok = $false
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 5
+            try {
+              Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/api/health -TimeoutSec 5 | Out-Null
+              $ok = $true; break
+            } catch { }
+          }
+          if (-not $ok) { throw "exe did not become healthy in 150s" }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -86,8 +110,9 @@ jobs:
             **Download:** `hinata-backend.exe` — single-file backend with the full
             brain bundled (hinata-omni Q4_K_M multimodal GGUF + vision projector).
 
-            **First run requirements:** [Ollama](https://ollama.com) running locally.
-            The exe provisions its model into Ollama automatically on first boot.
+            **Zero dependencies** — the llama.cpp inference engine (Vulkan GPU)
+            and the full multimodal model are bundled inside. No Ollama needed.
+            Requires only a modern Windows GPU driver. Alt+Shift+H toggles her.
           files: hinata-backend.exe
           draft: false
           prerelease: false

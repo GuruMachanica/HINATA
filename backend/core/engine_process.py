@@ -65,6 +65,7 @@ def launch(server_exe: Path, model: Path, mmproj: Path, port: int) -> subprocess
         "-ngl", "99", "-c", "16384",
         "--temp", "0.5", "--repeat-penalty", "1.2",
         "--presence-penalty", "1.5", "-np", "2",
+        "--embeddings", "--pooling", "mean",
     ]
     log.info("engine: launching llama-server on :%d ...", port)
     log_path = BASE_DIR / "engine.log"

@@ -13,13 +13,6 @@ ROOT_DIR = BASE_DIR  # compatibility alias (exe dir when frozen, project root in
 MODEL_ENDPOINT = os.getenv("HINATA_MODEL_ENDPOINT", "http://127.0.0.1:11434/v1")
 
 
-def model_endpoint() -> str:
-    """Live endpoint — re-reads env so the engine bootstrap can retarget it.
-
-    Import-time constants freeze before EngineBootstrap runs; every consumer
-    must call this (or read the module attribute lazily) instead.
-    """
-    return os.getenv("HINATA_MODEL_ENDPOINT", MODEL_ENDPOINT)
 MODEL_NAME = os.getenv("HINATA_MODEL_NAME", "hinata-omni")
 MODEL_API_KEY = os.getenv("HINATA_MODEL_KEY", "ollama")
 VISION_MODEL = os.getenv("HINATA_VISION_MODEL", "hinata-omni")  # same model: text + vision + thinking
@@ -27,7 +20,7 @@ VISION_MODEL = os.getenv("HINATA_VISION_MODEL", "hinata-omni")  # same model: te
 # Agentic tool-calling (in-prompt JSON protocol; works with non-tool models)
 AGENTIC_MODE = os.getenv("HINATA_AGENTIC", "1") == "1"
 MAX_TOOL_ROUNDS = int(os.getenv("HINATA_MAX_TOOL_ROUNDS", "4"))
-THINK_BUDGET = int(os.getenv("HINATA_THINK_BUDGET", "2048"))  # max completion tokens/turn
+THINK_BUDGET = int(os.getenv("HINATA_THINK_BUDGET", "1200"))  # caps thinking latency
 
 # Proactivity
 PROACTIVE_ENABLED = os.getenv("HINATA_PROACTIVE", "1") == "1"
@@ -35,6 +28,15 @@ PROACTIVE_MIN_INTERVAL_S = int(os.getenv("HINATA_PROACTIVE_INTERVAL", "600"))
 
 LOG_LEVEL = os.getenv("HINATA_LOG_LEVEL", "INFO")
 AUTH_TOKEN = os.getenv("HINATA_AUTH_TOKEN", "")
+
+def model_endpoint() -> str:
+    """Live endpoint — re-reads env so the engine bootstrap can retarget it.
+
+    Import-time constants freeze before EngineBootstrap runs; every consumer
+    must call this (or read the module attribute lazily) instead.
+    """
+    return os.getenv("HINATA_MODEL_ENDPOINT", MODEL_ENDPOINT)
+
 
 # Streaming: sentence-chunked TTS while the model is still generating
 STREAMING_ENABLED = os.getenv("HINATA_STREAM", "1") == "1"

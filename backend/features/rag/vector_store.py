@@ -52,12 +52,20 @@ class VectorStore:
         db.setup(_SCHEMA)
 
     def _embed(self, text: str) -> Optional[List[float]]:
-        body = json.dumps({"model": EMBED_MODEL, "prompt": text[:800]}).encode()
+        # Ollama native shape {model, prompt}; llama.cpp OpenAI shape {input}.
+        base = model_endpoint().rstrip("/")
+        if base.endswith("/v1"):
+            url, body = base + "/embeddings", json.dumps({"input": text[:800]})
+        else:
+            url, body = base.replace("/v1", "") + "/api/embeddings", json.dumps(
+                {"model": EMBED_MODEL, "prompt": text[:800]})
         req = urllib.request.Request(
-            _embed_url(), data=body, headers={"Content-Type": "application/json"})
+            url, data=body.encode(), headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
-                return json.loads(resp.read().decode())["embedding"]
+                data = json.loads(resp.read().decode())
+                vec = data.get("embedding") or (data.get("data") or [{}])[0].get("embedding")
+                return vec
         except Exception:
             return None
 
