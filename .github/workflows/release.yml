@@ -37,7 +37,8 @@ jobs:
           New-Item -ItemType Directory -Force product/engine | Out-Null
           Invoke-WebRequest -Uri "${{ env.LLAMA_ZIP }}" -OutFile engine.zip
           Expand-Archive engine.zip -DestinationPath engine-tmp
-          $src = (Get-ChildItem engine-tmp -Recurse -Directory | Select-Object -First 1).FullName
+          $src = (Get-ChildItem engine-tmp -Recurse -File -Filter llama-server.exe | Select-Object -First 1).Directory.FullName
+          if (-not $src) { throw "llama-server.exe not found in downloaded archive" }
           $keep = @('llama-server.exe','ggml.dll','ggml-base.dll','ggml-cpu.dll',
                     'ggml-vulkan.dll','SDL2.dll','libcurl-x64.dll',
                     'libllama.dll','llama.dll','mtmd.dll','libogg.dll','libvorbis.dll')
@@ -45,9 +46,10 @@ jobs:
             $p = Join-Path $src $f
             if (Test-Path $p) { Copy-Item $p product/engine/ }
           }
+          if (-not (Test-Path product/engine/llama-server.exe)) { throw "llama-server.exe was not staged" }
           Remove-Item engine.zip, engine-tmp -Recurse -Force
         env:
-          LLAMA_ZIP: https://github.com/ggml-org/llama.cpp/releases/download/b11128/llama-b11128-bin-win-vulkan-x64.zip
+          LLAMA_ZIP: https://github.com/ggml-org/llama.cpp/releases/download/b10936/llama-b10936-bin-win-vulkan-x64.zip
 
       - name: Stage bundled models (download Q4_K_M + mmproj)
         shell: pwsh
