@@ -1,0 +1,81 @@
+# PROPRIETARY - STRICT PRIVATE USE & INSPECTION LICENSE
+
+Copyright (c) 2026 Mohammad Huzaifa. All rights reserved.
+
+Sole Architect & Lead Engineer:
+ - Mohammad Huzaifa (https://github.com/GuruMachanica)
+
+Repository:
+ - https://github.com/GuruMachanica/HINATA
+
+Project Identity & Architectural Development Attribution:
+HINATA (ひなた) is an independent local autonomous AI desktop companion platform designed, architected, and developed by Mohammad Huzaifa. The project integrates a local multimodal AI brain, semantic memory, knowledge-graph reasoning, agentic tools, voice synthesis, proactive behavior, and an embodied VRM desktop companion into a unified on-device system.
+
+The repository may incorporate, vendor, or reference third-party open-source software, model weights, model variants, runtime components, and other external materials. Those components remain subject to their respective upstream licenses and terms. This license governs the HINATA project source code, original architecture, original documentation, original UI/UX, branding, and other original materials owned by Mohammad Huzaifa, except where expressly stated otherwise.
+
+---
+
+### 1. Grant of Permission
+Permission is granted solely to inspect the raw source code, architecture diagrams, and documentation of this repository for private educational study, personal learning, and peer inspection. No other rights or licenses are granted. Under no circumstances is permission granted to run, deploy, compile, execute, copy, distribute, or host HINATA or its original components in any environment without prior, express, and written authorization from Mohammad Huzaifa.
+
+---
+
+### 2. Strict Restrictions & Prohibitions
+By viewing, cloning, checking out, downloading, or inspecting this repository, you enter into a legally binding agreement adhering to the following strict prohibitions without prior, express, and written authorization from Mohammad Huzaifa:
+
+1. **No Execution or Deployment**: You may not compile, build, run, host, deploy, or execute HINATA or any protected HINATA component on public or private servers, local devices, virtual machines, containers, cloud infrastructure, mobile devices, emulators, or production systems.
+2. **No Code Copying or Plagiarism**: You may not copy, duplicate, replicate, republish, paste, hotlink, or otherwise reproduce any protected portion of the HINATA codebase, algorithms, architecture, API design, schemas, prompts, agent protocols, or implementation details.
+3. **No Derivative Works or Forks**: You may not create, compile, distribute, publish, or sublicense derivative works, modified builds, forks, plugins, extensions, ports, or complementary implementations derived from protected HINATA materials.
+4. **No Component Extraction or Integration**: You may not extract, reuse, or integrate protected HINATA components—including the agentic orchestration logic, memory/RAG architecture, knowledge-graph implementation, tool framework, sandboxing logic, mood/proactivity systems, desktop companion implementation, UI system, or other original subsystems—into third-party software or services.
+5. **No Commercial Exploitation**: You may not sell, lease, rent, license, sublicense, commercialize, monetize, or otherwise use protected HINATA materials to generate direct or indirect revenue.
+6. **No Asset, UI, or Branding Theft**: You may not reuse HINATA logos, names, visual assets, avatar presentation, UI components, design systems, animations, color systems, typography treatments, branding, screenshots, or other protected presentation materials.
+7. **No Reverse Engineering or Security Attacks**: You may not reverse-engineer, decompile, disassemble, extract protected implementation details, or conduct penetration testing, vulnerability scanning, fuzzing, denial-of-service testing, or other attacks against HINATA infrastructure or services.
+8. **No AI / LLM Model Training**: Protected HINATA source code, architecture, documentation, prompts, comments, datasets, schemas, or original implementation materials may not be used as training inputs, fine-tuning corpora, evaluation corpora, or scraped datasets for LLMs, code-generation models, developer assistants, or other generative AI systems without written consent.
+9. **No Unauthorized Academic Submission**: HINATA or any substantial portion of its protected materials may not be submitted as original work for academic credit, thesis evaluation, hackathons, grading, certification, or similar educational purposes without prior written authorization from Mohammad Huzaifa.
+
+---
+
+### 3. Intellectual Property & Ownership
+All rights, title, and interest in and to the HINATA name, branding, original architecture, original source code, original documentation, original UI/UX, and other original intellectual property owned by Mohammad Huzaifa remain exclusively owned by Mohammad Huzaifa, subject to any rights retained by third-party licensors.
+
+Nothing in this license transfers ownership of third-party components, open-source software, model weights, or other materials that are independently licensed by their respective authors.
+
+---
+
+### 4. No Warranty
+THIS CODEBASE, ORIGINAL MATERIALS, AND DOCUMENTATION ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NON-INFRINGEMENT, TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM ACCESS TO, USE OF, OR INABILITY TO USE THE PROTECTED MATERIALS.
+
+---
+
+### 5. Breach of Terms & Legal Enforcement
+Any violation of these terms immediately terminates the permission granted under Section 1.
+
+The copyright owner reserves all rights and remedies available under applicable law, including rights relating to unauthorized copying, redistribution, commercial exploitation, infringement, or unauthorized deployment.
+
+Nothing in this section limits any rights or remedies that cannot lawfully be waived or restricted.
+
+---
+
+### 6. Third-Party Materials
+HINATA may include or reference third-party materials such as:
+
+- Qwen3-VL-2B-Thinking and related model variants
+- GGUF quantizations
+- llama.cpp
+- NousResearch Hermes Agent
+- three-vrm
+- edge-tts
+- other open-source libraries and external assets
+
+Those materials are **not relicensed by this document**. Their respective licenses, notices, and attribution requirements continue to apply.
+
+---
+
+### 7. Inquiries & Permissions
+For licensing, commercial use, redistribution, academic authorization, or other permission requests:
+
+🌐 **https://github.com/GuruMachanica/HINATA**
+
+---
+
+Copyright (c) 2026 Mohammad Huzaifa. All rights reserved.
