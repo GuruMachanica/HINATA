@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from ...core.base_feature import BaseFeature, register
@@ -20,13 +21,23 @@ class ServerFeature(BaseFeature):
     def __init__(self) -> None:
         super().__init__()
         self.app = FastAPI(title="HINATA", version="3.0.0")
+        # The Electron overlay loads via file:// (origin "null") — allow local
+        # origins so the VRM fetch works from the desktop shell.
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["null", "http://localhost:*", "http://127.0.0.1:*"],
+            allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
         self.chat: WSChatHandler | None = None
 
     def setup(self) -> None:
         from ...features.brain import BrainFeature
         from ...core.base_feature import get
         brain = get(BrainFeature.name)
-        self.chat = WSChatHandler(self.bus, brain.think)
+        stream_fn = getattr(brain, "think_stream", None)
+        self.chat = WSChatHandler(self.bus, brain.think, stream_fn)
         self._mount_api()
         self.app.add_api_websocket_route("/ws", self._ws_endpoint)
         self.app.add_api_websocket_route("/", self._ws_endpoint)

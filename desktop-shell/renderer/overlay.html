@@ -13,7 +13,7 @@
     }
     #stage {
       position: absolute;
-      width: 440px; height: 580px;
+      width: 300px; height: 395px;
       bottom: 20px; right: 20px;
     }
     #stage canvas { display: block; }
@@ -21,7 +21,7 @@
       position: absolute;
       left: 50%; top: 40px;
       transform: translateX(-50%) translateY(8px);
-      max-width: 380px;
+      max-width: 300px;
       padding: 10px 14px;
       background: rgba(20, 24, 38, 0.92);
       color: #ffe9f2;
@@ -46,12 +46,13 @@
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.4.2/lib/three-vrm.module.min.js"
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/three_addons/",
+      "@pixiv/three-vrm": "./vendor/three-vrm.module.min.js"
     }
   }
   </script>
+  <script src="overlay_voice.js"></script>
   <script type="module" src="overlay.js"></script>
 </body>
 </html>

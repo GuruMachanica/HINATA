@@ -1,0 +1,11 @@
+# HINATA — Python dependencies (backend + voice)
+# Install: pip install -r requirements.txt
+
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+edge-tts>=6.1
+ddgs>=9.0            # web_search tool (DuckDuckGo)
+mss>=9.0             # screen capture for vision (see_screen)
+pillow>=10.0
+concurrent-log-handler>=0.9.25

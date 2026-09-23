@@ -28,7 +28,7 @@ let moveMode = process.env.HINATA_MOVE_MODE || 'wander'; // 'wander' | 'follow' 
 let wanderTarget = null;
 let wanderRepathAt = 0;
 let charScreenX = -1, charScreenY = -1;
-const CHAR_W = 440, CHAR_H = 580;
+const CHAR_W = 300, CHAR_H = 395; // compact desktop presence
 
 function getActiveDisplay() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -47,39 +47,39 @@ function startMovementEngine() {
     if (!mainWindow || !mainWindow.isVisible() || moveMode === 'off') return;
 
     const wa = getActiveDisplay().workArea;
+    // Taskbar-lane: she walks only along the bottom edge of the work area
+    // (the taskbar strip is her ground), never roams the full screen.
+    const laneY = wa.height - CHAR_H; // feet planted on the taskbar top edge
+
     if (charScreenX < 0) {
-      // First run: bottom-right, above the taskbar
+      // First run: bottom-right on the taskbar lane
       charScreenX = wa.width - CHAR_W - 40;
-      charScreenY = wa.height - CHAR_H - 20;
+      charScreenY = laneY;
+      mainWindow.webContents.send('move:pos', { x: Math.round(charScreenX), y: Math.round(charScreenY) });
     }
 
-    let targetX, targetY, stopDist;
+    let targetX, stopDist;
     if (moveMode === 'follow') {
-      const { x: cx, y: cy } = screen.getCursorScreenPoint();
+      const { x: cx } = screen.getCursorScreenPoint();
       targetX = cx - wa.x - CHAR_W / 2;
-      targetY = cy - wa.y - CHAR_H * 0.75;
-      stopDist = 120;
+      stopDist = 100;
     } else {
-      // Wander: pick a random screen edge, repath every 6-12s
+      // Wander: pick a random X along the taskbar, repath every 5-10s
       const now = Date.now();
       if (!wanderTarget || now > wanderRepathAt) {
-        const margin = 40;
-        const edge = Math.floor(Math.random() * 4);
-        wanderTarget =
-          edge === 0 ? { x: Math.random() * Math.max(1, wa.width - CHAR_W), y: margin } :
-          edge === 1 ? { x: wa.width - CHAR_W - margin, y: Math.random() * Math.max(1, wa.height - CHAR_H) } :
-          edge === 2 ? { x: Math.random() * Math.max(1, wa.width - CHAR_W), y: wa.height - CHAR_H - margin } :
-                       { x: margin, y: Math.random() * Math.max(1, wa.height - CHAR_H) };
-        wanderRepathAt = now + 6000 + Math.random() * 6000;
+        const margin = 20;
+        wanderTarget = { x: margin + Math.random() * Math.max(1, wa.width - CHAR_W - margin * 2) };
+        wanderRepathAt = now + 5000 + Math.random() * 5000;
       }
       targetX = wanderTarget.x;
-      targetY = wanderTarget.y;
-      stopDist = 24;
+      stopDist = 12;
     }
 
+    // Clamp inside the current display horizontally
+    targetX = Math.max(0, Math.min(targetX, wa.width - CHAR_W));
+
     const dx = targetX - charScreenX;
-    const dy = targetY - charScreenY;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.abs(dx);
 
     if (dist <= stopDist) {
       mainWindow.webContents.send('move:state', { moving: false, dirX: 0 });
@@ -87,9 +87,9 @@ function startMovementEngine() {
       return;
     }
 
-    const speed = Math.min(6, dist * 0.08);
+    const speed = Math.min(5, dist * 0.08);
     charScreenX += (dx / dist) * speed;
-    charScreenY += (dy / dist) * speed;
+    charScreenY = laneY; // never leaves the taskbar lane
     mainWindow.webContents.send('move:pos', { x: Math.round(charScreenX), y: Math.round(charScreenY) });
     mainWindow.webContents.send('move:state', { moving: true, dirX: Math.sign(dx) });
   }, 30);
@@ -114,9 +114,28 @@ function startCursorTracking() {
   }, 50);
 }
 
-/* ------------------------------------------------------------------ *
+/* ------------------------------------------------------------------
  * Window
  * ------------------------------------------------------------------ */
+// Native HWND_TOPMOST: Electron's 'screen-saver' z-order sits BELOW the
+// Windows taskbar. A one-shot PowerShell SetWindowPos(HWND_TOPMOST) puts
+// her band above it so she can walk along the taskbar face.
+function setNativeTopMost(win) {
+  try {
+    const hwndBuf = win.getNativeWindowHandle();
+    let hwnd = 0;
+    for (let i = hwndBuf.length - 1; i >= 0; i--) hwnd = hwnd * 256 + hwndBuf[i];
+    const script =
+      "Add-Type -Name U -Namespace W -MemberDefinition '[DllImport(\"user32.dll\")] public static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int cx, int cy, uint f);'; " +
+      `[W.U]::SetWindowPos([IntPtr]::new(${hwnd}), [IntPtr]::new(-1), 0, 0, 0, 0, 0x0043)`;
+    require('child_process')
+      .spawn('powershell', ['-NoProfile', '-Command', script], { detached: true, stdio: 'ignore' })
+      .unref();
+  } catch (e) {
+    console.warn('[overlay] native topmost failed (non-fatal):', e.message);
+  }
+}
+
 function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight, x: waX, y: waY } = primaryDisplay.workArea;
@@ -136,13 +155,31 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false, // file:// renderer fetches VRM + CDN modules from localhost
     },
   });
 
-  mainWindow.setAlwaysOnTop(true, 'screen-saver');
+  // Windows: 'screen-saver' level sits BELOW the taskbar. Use 'floating' +
+  // a native SetWindowPos(HWND_TOPMOST) so she walks ON TOP of the taskbar.
+  mainWindow.setAlwaysOnTop(true, 'floating');
+  if (process.platform === 'win32') {
+    setNativeTopMost(mainWindow);
+  }
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   // Click-through by default; renderer re-enables input when hovering her body
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  // Surface renderer errors in the terminal — no more silent black screens
+  const wc = mainWindow.webContents;
+  wc.on('console-message', (_e, level, message, line, sourceId) => {
+    if (level >= 2) console.error(`[overlay:${path.basename(sourceId)}:${line}] ${message}`);
+  });
+  wc.on('did-fail-load', (_e, code, desc, url) => {
+    console.error(`[overlay] failed to load ${url}: ${code} ${desc}`);
+  });
+  wc.on('render-process-gone', (_e, details) => {
+    console.error(`[overlay] renderer crashed: ${details.reason}`);
+  });
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'overlay.html'));
 
@@ -155,9 +192,12 @@ function toggleVisibility() {
 }
 
 function createTray() {
-  // Generate a simple tray icon (16x16 sun emoji rendered as image is overkill;
-  // use an empty image with a tooltip + menu on all platforms)
-  tray = new Tray(nativeImage.createEmpty());
+  // Sun-disc icon (HINATA = ひなた, a warm sunlit place)
+  const iconPath = path.join(__dirname, 'tray_icon.png');
+  const icon = fs.existsSync(iconPath)
+    ? nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+    : nativeImage.createEmpty();
+  tray = new Tray(icon);
   tray.setToolTip('HINATA — Desktop Companion');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show / Hide  (Alt+Shift+H)', click: toggleVisibility },
@@ -210,6 +250,13 @@ ipcMain.handle('move:set-mode', (_evt, mode) => {
 });
 
 ipcMain.handle('app:quit', () => app.quit());
+
+// Toggle mic listening from the global hotkey
+function toggleMic() {
+  if (mainWindow) mainWindow.webContents.send('mic:toggle');
+}
+// Push-to-talk: Alt+Shift+M toggles always-on listening (VAD barge-in in renderer)
+globalShortcut.register('Alt+Shift+M', toggleMic);
 
 /* ------------------------------------------------------------------ *
  * Boot

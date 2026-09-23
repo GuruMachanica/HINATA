@@ -18,14 +18,15 @@ CACHE_CAPACITY = 64
 
 
 class TTSSynthesizer:
-    def __init__(self, voice: str = "en-US-AriaNeural") -> None:
+    def __init__(self, voice: str = "en-US-AvaNeural") -> None:
         self.voice = voice
         self._cache: collections.OrderedDict[str, str] = collections.OrderedDict()
         self._lock = threading.Lock()
 
     def synthesize(self, text: str) -> Optional[str]:
         """Returns 'data:audio/mp3;base64,...' or None on failure."""
-        clean = (text or "").strip()
+        from ...features.brain.reply_salvage import clean_for_speech
+        clean = clean_for_speech((text or "")).strip()
         if not clean:
             return None
 

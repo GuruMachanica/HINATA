@@ -46,11 +46,15 @@ class MemoryFeature(BaseFeature):
         event.payload["cleared_count"] = count
 
     def _on_append(self, event: Event) -> None:
-        self.store.append(
+        message_id = self.store.append(
             event.payload.get("role", "user"),
             event.payload.get("content", ""),
             event.payload.get("mood"),
         )
+        self.bus.emit("memory.stored", {
+            "message_id": message_id,
+            "content": event.payload.get("content", ""),
+        }, source=self.name)
 
     def _on_search(self, event: Event) -> None:
         event.payload["results"] = self.store.search(

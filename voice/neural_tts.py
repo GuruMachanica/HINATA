@@ -1,8 +1,7 @@
 """
 HINATA Neural TTS Engine (Edge-TTS / Natural Human Voice)
-Generates studio-quality female executive speech using en-US-AriaNeural.
-Outputs base64-encoded audio for zero-dependency browser playback.
-Strictly under 75 LOC.
+Generates studio-quality female speech; outputs base64 audio for
+zero-dependency browser playback. Strictly under 75 LOC.
 """
 
 import sys
@@ -12,9 +11,14 @@ import asyncio
 import argparse
 import edge_tts
 
-DEFAULT_VOICE = "en-US-AriaNeural"  # Professional, calm, warm executive tone
+# en-US-AvaNeural: warmer, more expressive multilingual voice than Aria,
+# with natural laughter/energy — the closest to a living companion.
+DEFAULT_VOICE = "en-US-AvaNeural"
+DEFAULT_RATE = "+8%"    # slightly brisk = confident, less robotic
+DEFAULT_PITCH = "+2Hz"  # a touch brighter
 
-async def generate_audio_bytes(text: str, voice: str = DEFAULT_VOICE, rate: str = "+0%", pitch: str = "+0Hz") -> bytes:
+async def generate_audio_bytes(text: str, voice: str = DEFAULT_VOICE,
+                               rate: str = DEFAULT_RATE, pitch: str = DEFAULT_PITCH) -> bytes:
     """Synthesizes text to MP3 audio bytes using neural voice models."""
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     audio_data = bytearray()
@@ -23,7 +27,8 @@ async def generate_audio_bytes(text: str, voice: str = DEFAULT_VOICE, rate: str 
             audio_data.extend(chunk["data"])
     return bytes(audio_data)
 
-def synthesize_to_data_uri(text: str, voice: str = DEFAULT_VOICE, rate: str = "+0%", pitch: str = "+0Hz") -> str:
+def synthesize_to_data_uri(text: str, voice: str = DEFAULT_VOICE,
+                           rate: str = DEFAULT_RATE, pitch: str = DEFAULT_PITCH) -> str:
     """Returns base64 data URI string: data:audio/mp3;base64,..."""
     raw_bytes = asyncio.run(generate_audio_bytes(text, voice, rate, pitch))
     b64 = base64.b64encode(raw_bytes).decode("ascii")
@@ -33,11 +38,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HINATA Neural TTS")
     parser.add_argument("text", type=str, help="Text to synthesize")
     parser.add_argument("--voice", type=str, default=DEFAULT_VOICE, help="Voice name")
-    parser.add_argument("--rate", type=str, default="+0%", help="Rate modifier (e.g. +5% or -5%)")
+    parser.add_argument("--rate", type=str, default=DEFAULT_RATE, help="Rate modifier (e.g. +5%)")
+    parser.add_argument("--pitch", type=str, default=DEFAULT_PITCH, help="Pitch modifier (e.g. +2Hz)")
     args = parser.parse_args()
 
     try:
-        uri = synthesize_to_data_uri(args.text, voice=args.voice, rate=args.rate)
+        uri = synthesize_to_data_uri(args.text, voice=args.voice, rate=args.rate, pitch=args.pitch)
         print(json.dumps({"success": True, "audio": uri, "text": args.text}))
     except Exception as e:
         print(json.dumps({"success": False, "error": str(e)}))

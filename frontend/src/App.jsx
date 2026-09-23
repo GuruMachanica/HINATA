@@ -64,7 +64,7 @@ export default function App() {
         <div className="avatar-host" ref={stageHostRef} />
         <div className="telemetry">
           <span>Brain: Hermes Agent</span>
-          <span>Model: hinata-brain (local)</span>
+          <span>Model: hinata-omni (local)</span>
           <span>Memory: SQLite + KG</span>
         </div>
       </aside>

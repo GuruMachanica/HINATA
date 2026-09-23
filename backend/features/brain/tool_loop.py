@@ -6,40 +6,16 @@ Protocol (works with ANY chat model, no native function-calling needed):
 """
 from __future__ import annotations
 
-import ast
 import json
 import logging
-import re
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple
 
 from ...core.config import MAX_TOOL_ROUNDS
 from ...features.tools.registry import ToolRegistry
+from .tool_parser import extract_json_objects, parse_json_call, parse_bracket_call, strip_calls
 
 log = logging.getLogger("hinata.toolloop")
-
-_JSON_RE = re.compile(r"\{\s*\"tool\".*?\}\s*$|\{\s*\"tool\".*?\}", re.DOTALL)
-_TOOL_KEY_RE = re.compile(r"\"tool\"\s*:")
-_BRACKET_CALL_RE = re.compile(r"\[([a-zA-Z_0-9]+)\s*\((.*?)\)\s*\]|(?:\b|^)([a-zA-Z_0-9]+)\s*\((.*?)\)", re.DOTALL)
-
-
-def _extract_json_objects(text: str) -> List[str]:
-    """Pull balanced {...} objects containing a \"tool\" key."""
-    out = []
-    for start in (m.start() for m in _TOOL_KEY_RE.finditer(text)):
-        depth = 0
-        begin = text.rfind("{", 0, start + 1)
-        if begin < 0:
-            continue
-        for i in range(begin, len(text)):
-            if text[i] == "{":
-                depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    out.append(text[begin:i + 1])
-                    break
-    return out
 
 
 @dataclass
@@ -54,21 +30,6 @@ class TurnTrace:
         ]
 
 
-def _strip_calls(text: str) -> str:
-    """Remove tool-call JSON blobs, bracket calls, and stray formatting artifacts."""
-    cleaned = text
-    for blob in _extract_json_objects(text):
-        cleaned = cleaned.replace(blob, "")
-    # Remove XML-style tool tags like <tool>...</tool>
-    cleaned = re.sub(r"<tool>.*?</tool>", "", cleaned, flags=re.DOTALL)
-    # Remove bracket tool invocations like [query_knowledge("...")]
-    cleaned = re.sub(r"\[[a-zA-Z_0-9]+\s*\([^\]]*\)\s*\]", "", cleaned)
-    # Remove empty or lonely markdown bold markers like ** or ** **
-    cleaned = re.sub(r"\*\*(\s*)\*\*", r"\1", cleaned)
-    cleaned = re.sub(r"(?:^|\s)\*\*(?:\s|$)", " ", cleaned)
-    return cleaned.strip() or "Done."
-
-
 class AgenticToolLoop:
     def __init__(self, tools: ToolRegistry) -> None:
         self.tools = tools
@@ -76,102 +37,72 @@ class AgenticToolLoop:
     def extract_call(self, text: str) -> dict | None:
         """Find a tool-call JSON object or bracket call in the reply."""
         candidate = text.strip()
-        blobs = [candidate, *_extract_json_objects(candidate)]
-        for blob in blobs:
-            try:
-                parsed = json.loads(blob)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(parsed, dict) and "tool" in parsed:
-                parsed["tool"] = str(parsed["tool"]).replace("()", "").strip()
-                return parsed
+        for blob in [candidate, *extract_json_objects(candidate)]:
+            call = parse_json_call(blob, self.tools)
+            if call:
+                return call
+        return parse_bracket_call(candidate, self.tools)
 
-        # Fallback: check for bracket calls like [web_search("query")] or [query_knowledge("term")]
-        for m in re.finditer(r"\[([a-zA-Z_0-9]+)\s*\((.*?)\)\s*\]", candidate):
-            fn_name = m.group(1).strip()
-            args_raw = m.group(2).strip()
-            tool = self.tools.get(fn_name)
-            if tool:
-                args = self._parse_call_args(args_raw, tool)
-                return {"tool": fn_name, "args": args}
-
-        return None
-
-    def _parse_call_args(self, args_raw: str, tool) -> dict:
-        if not args_raw:
-            return {}
-        kwargs = {}
-        positional = []
-        try:
-            tree = ast.parse(f"f({args_raw})").body[0].value  # type: ignore
-            for arg in tree.args:
-                positional.append(ast.literal_eval(arg))
-            for kw in tree.keywords:
-                kwargs[kw.arg] = ast.literal_eval(kw.value)
-        except Exception:
-            cleaned = args_raw.strip().strip("'\"")
-            if cleaned:
-                positional.append(cleaned)
-
-        if positional:
-            param_names = [p.name for p in tool.params]
-            for name, val in zip(param_names, positional):
-                if name not in kwargs:
-                    kwargs[name] = val
-        return kwargs
-
-    def run(self, query: str, system: str, chat) -> tuple[str, TurnTrace]:
+    def run(self, query: str, system: str, chat) -> Tuple[str, TurnTrace]:
         """Drive up to MAX_TOOL_ROUNDS tool rounds; returns (final_text, trace)."""
+        self._chat = chat
         trace = TurnTrace()
         message = query
         final = ""
-        seen_calls = set()
+        seen_calls: set = set()
 
-        for _round in range(MAX_TOOL_ROUNDS + 1):
+        for round_no in range(MAX_TOOL_ROUNDS + 1):
             reply = chat(system, message)
             call = self.extract_call(reply)
-            if call is None or _round == MAX_TOOL_ROUNDS:
+            if call is None or round_no == MAX_TOOL_ROUNDS:
                 final = reply
                 break
 
             tool_name = str(call.get("tool"))
             tool_args = dict(call.get("args") or {})
-            call_sig = (tool_name, json.dumps(tool_args, sort_keys=True))
+            sig = (tool_name, json.dumps(tool_args, sort_keys=True))
 
-            # Prevent infinite repetition of the exact same tool
-            if call_sig in seen_calls:
-                message = (
-                    f"You already executed {tool_name}. Do NOT call any more tools.\n"
-                    f"Now give your direct spoken reply to the user in 1-2 natural sentences:"
-                )
-                final = chat(system, message)
+            if sig in seen_calls:
+                final = self._force_final(system, tool_name)
                 break
-            seen_calls.add(call_sig)
+            seen_calls.add(sig)
 
             result = self.tools.dispatch(tool_name, tool_args)
             trace.tool_calls.append({
                 "tool": tool_name, "args": tool_args,
                 "ok": result.ok, "output": result.short(300),
             })
-            if result.ok:
-                message = (
-                    f"Tool result:\n{result.short()}\n\n"
-                    f"Original request: {query}\n"
-                    "If you have everything you need, give the FINAL ANSWER as plain "
-                    "prose (no JSON, no brackets). Otherwise reply with exactly one next tool JSON."
-                )
-            else:
-                message = (
-                    f"Tool call failed: {result.short(200)}\n"
-                    "Fix the arguments and reply with exactly one tool JSON, or "
-                    "answer in plain prose without tools."
-                )
+            message = self._next_message(query, result)
 
-        final = _strip_calls(final)
-        if not final or final == "Done.":
-            if trace.tool_calls:
-                last_call = trace.tool_calls[-1]
-                final = f"I've completed that for you ({last_call['tool']})."
-            else:
-                final = "Understood!"
+        final = self._finalize(strip_calls(final), trace)
         return final, trace
+
+    def _force_final(self, system: str, tool_name: str) -> str:
+        return self._chat(
+            system,
+            f"You already executed {tool_name}. Do NOT call any more tools.\n"
+            f"Now give your direct spoken reply to the user in 1-2 natural sentences:",
+        )
+
+    @staticmethod
+    def _next_message(query: str, result) -> str:
+        if result.ok:
+            return (
+                f"Tool result:\n{result.short()}\n\n"
+                f"Original request: {query}\n"
+                "If you have everything you need, give the FINAL ANSWER as plain "
+                "prose (no JSON, no brackets). Otherwise reply with exactly one next tool JSON."
+            )
+        return (
+            f"Tool call failed: {result.short(200)}\n"
+            "Fix the arguments and reply with exactly one tool JSON, or "
+            "answer in plain prose without tools."
+        )
+
+    @staticmethod
+    def _finalize(final: str, trace: TurnTrace) -> str:
+        if final and final != "Done.":
+            return final
+        if trace.tool_calls:
+            return f"I've completed that for you ({trace.tool_calls[-1]['tool']})."
+        return "Understood!"

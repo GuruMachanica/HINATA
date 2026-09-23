@@ -19,7 +19,7 @@ def build_api_router(tts_bytes: Callable[[str], bytes | None]) -> APIRouter:
         brain = get(BrainFeature.name)
         return {
             "status": "online", "companion": "HINATA",
-            "model": brain.engine.engine_model() if hasattr(brain.engine, "engine_model") else "hinata-brain",
+            "model": brain.engine.engine_model() if hasattr(brain.engine, "engine_model") else "hinata-omni",
             "memory": get(MemoryFeature.name).stats(),
             "kg": get(KnowledgeFeature.name).summary(),
         }
@@ -59,6 +59,15 @@ def build_api_router(tts_bytes: Callable[[str], bytes | None]) -> APIRouter:
         from ...features.memory import MemoryFeature
         safe_limit = max(1, min(limit, 100))
         return {"turns": get(MemoryFeature.name).store.recent(safe_limit)}
+
+    @router.get("/mood")
+    def mood() -> Dict:
+        """HINATA's current temperament (decays toward neutral over time)."""
+        try:
+            from ...features.mood import MoodFeature
+            return get(MoodFeature.name).current()
+        except KeyError:
+            return {"mood": "neutral", "intensity": 0.0}
 
     @router.get("/tts")
     def tts(text: str = Query(..., min_length=1, max_length=500)) -> Response:

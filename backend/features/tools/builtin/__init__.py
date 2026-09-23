@@ -5,6 +5,8 @@ from .file_tools import ReadFileTool, ListDirTool, WriteFileTool
 from .shell_tool import ShellTool, PythonEvalTool
 from .memory_tools import RecallMemoryTool, KnowledgeQueryTool, RememberFactTool, ResetKnowledgeTool
 from .web_tools import WebSearchTool
+from .vision_tools import SeeScreenTool
+from .rag_tools import SemanticSearchTool
 
 
 def _register_all() -> None:
@@ -14,12 +16,14 @@ def _register_all() -> None:
         BatteryTool(),
         OpenAppOrUrlTool(),
         WebSearchTool(),
+        SeeScreenTool(),
         ReadFileTool(),
         ListDirTool(),
         WriteFileTool(),
         ShellTool(),
         PythonEvalTool(),
         RecallMemoryTool(),
+        SemanticSearchTool(),
         KnowledgeQueryTool(),
         RememberFactTool(),
         ResetKnowledgeTool(),

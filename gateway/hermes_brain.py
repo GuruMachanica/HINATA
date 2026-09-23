@@ -26,9 +26,9 @@ HERMES_DIR = ROOT_DIR / "hermes-agent"
 SOUL_PATH = ROOT_DIR / "hermes-core" / "config" / "SOUL.md"
 
 DEFAULT_ENDPOINT = os.getenv("HERMES_MODEL_ENDPOINT", "http://127.0.0.1:11434/v1")
-# hinata-brain = heretic-org/Qwen-3-VL-2B-Instruct-heretic (Q4_K_M GGUF in Ollama,
+# hinata-omni = Qwen3-VL-2B-Thinking abliterated (Q3_K_L + mmproj-Q8, in Ollama,
 # with the HINATA persona baked into its system prompt).
-DEFAULT_MODEL = os.getenv("HERMES_MODEL_NAME", "hinata-brain")
+DEFAULT_MODEL = os.getenv("HERMES_MODEL_NAME", "hinata-omni")
 
 # Bella mood vocabulary -> (VRM expression hint, animation intent)
 MOODS = {
@@ -118,7 +118,7 @@ def _run_real_hermes(prompt: str):
 
     ensure_persona_installed()
     try:
-        # hinata-brain (heretic Qwen3-VL 2B) has no native Ollama tool-calling,
+        # hinata-omni (Qwen3-VL-2B abliterated) has no native Ollama tool-calling,
         # so run the real Hermes agent with all toolsets disabled — it acts as
         # the conversation/persona layer while we keep zero cloud dependencies.
         agent = AIAgent(

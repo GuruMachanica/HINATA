@@ -9,7 +9,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 
-const BACKEND_PORT = process.env.HINATA_PORT || 8080;
+// contextIsolation means no `process` in the renderer — the preload bridge
+// exposes the port instead (falls back to 8080).
+const BACKEND_PORT = (typeof window !== 'undefined' && window.HINATA_BACKEND_PORT) || 8080;
 const GATEWAY_WS = `ws://127.0.0.1:${BACKEND_PORT}`;
 const MODEL_URL = GATEWAY_WS.replace('ws', 'http') + '/models/vrm/hinata.vrm';
 
@@ -19,8 +21,8 @@ const MODEL_URL = GATEWAY_WS.replace('ws', 'http') + '/models/vrm/hinata.vrm';
 const stageEl = document.getElementById('stage');
 const bubbleEl = document.getElementById('speech-bubble');
 
-const STAGE_W = 440;
-const STAGE_H = 580;
+const STAGE_W = 300;
+const STAGE_H = 395;
 
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -39,49 +41,26 @@ const key = new THREE.DirectionalLight(0xfffaed, 1.6); key.position.set(1.0, 2.0
 const fill = new THREE.DirectionalLight(0xdbe8ff, 0.6); fill.position.set(-1.8, 0.8, 1.2); scene.add(fill);
 const rim = new THREE.DirectionalLight(0x00e5ff, 0.5); rim.position.set(0, 1.5, -2.0); scene.add(rim);
 
-// Grounded 3D Stage Pedestal so avatar firmly stands on a physical base inside the box
-const pedestalGeo = new THREE.CylinderGeometry(0.82, 0.88, 0.035, 48);
-const pedestalMat = new THREE.MeshStandardMaterial({
-  color: 0x0f1422,
-  roughness: 0.45,
-  metalness: 0.8,
-});
-const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
-pedestal.position.y = -0.018;
-scene.add(pedestal);
+// Desktop mode: NO pedestal — the Windows taskbar is her ground.
+// (Pedestal removed; contact shadow kept so her feet read as planted.)
 
-// Glowing cybernetic ring and contact floor shadow on pedestal top
+// Soft contact shadow under her feet (taskbar is the base)
 const floorCanvas = document.createElement('canvas');
 floorCanvas.width = 256; floorCanvas.height = 256;
 const fCtx = floorCanvas.getContext('2d');
 const cx = 128, cy = 128;
+// Soft contact shadow only (no neon ring in desktop mode — taskbar is her base)
 const bootShadow = fCtx.createRadialGradient(cx, cy, 0, cx, cy, 64);
-bootShadow.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
-bootShadow.addColorStop(0.55, 'rgba(0, 0, 0, 0.45)');
+bootShadow.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+bootShadow.addColorStop(0.6, 'rgba(0, 0, 0, 0.32)');
 bootShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 fCtx.fillStyle = bootShadow;
 fCtx.beginPath(); fCtx.arc(cx, cy, 64, 0, Math.PI * 2); fCtx.fill();
 
-fCtx.strokeStyle = 'rgba(0, 229, 255, 0.65)';
-fCtx.lineWidth = 3;
-fCtx.beginPath(); fCtx.arc(cx, cy, 106, 0, Math.PI * 2); fCtx.stroke();
-
-fCtx.strokeStyle = 'rgba(0, 229, 255, 0.35)';
-fCtx.lineWidth = 1.5;
-fCtx.beginPath(); fCtx.arc(cx, cy, 78, 0, Math.PI * 2); fCtx.stroke();
-
-for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) {
-  const x1 = cx + Math.cos(a) * 100;
-  const y1 = cy + Math.sin(a) * 100;
-  const x2 = cx + Math.cos(a) * 106;
-  const y2 = cy + Math.sin(a) * 106;
-  fCtx.beginPath(); fCtx.moveTo(x1, y1); fCtx.lineTo(x2, y2); fCtx.stroke();
-}
-
 const floorTexture = new THREE.CanvasTexture(floorCanvas);
 const floorPlaneGeo = new THREE.PlaneGeometry(1.64, 1.64);
 const floorPlaneMat = new THREE.MeshBasicMaterial({
-  map: floorTexture, transparent: true, opacity: 0.95, depthWrite: false,
+  map: floorTexture, transparent: true, opacity: 0.55, depthWrite: false,
 });
 const floorPlane = new THREE.Mesh(floorPlaneGeo, floorPlaneMat);
 floorPlane.rotation.x = -Math.PI / 2;
@@ -221,19 +200,20 @@ const POSES = {
   },
 
   walk: {
-    label: 'Walk cycle',
+    label: 'Taskbar stroll',
     fn: (t, el, targets) => {
-      const stride = el * 7.0;
-      const swing = Math.sin(stride) * 0.55;
-      setAbs(targets, 'leftUpperLeg', swing * 0.7, 0, 0.05);
-      setAbs(targets, 'rightUpperLeg', -swing * 0.7, 0, -0.05);
-      setAbs(targets, 'leftLowerLeg', Math.max(0, -swing) * 0.9, 0, 0);
-      setAbs(targets, 'rightLowerLeg', Math.max(0, swing) * 0.9, 0, 0);
-      armLift(targets, 'left', 0.18, -swing * 0.4, 0.25);
-      armLift(targets, 'right', 0.18, swing * 0.4, 0.25);
-      add(targets, 'spine', 0.06, 0, swing * 0.06);
-      add(targets, 'head', -0.03, 0, -swing * 0.05);
-      modelGroup.position.y = Math.abs(Math.sin(stride)) * 0.03;
+      // Grounded stroll: gentle stride, no vertical bounce (taskbar is flat ground)
+      const stride = el * 6.0;
+      const swing = Math.sin(stride) * 0.42;
+      setAbs(targets, 'leftUpperLeg', swing * 0.6, 0, 0.04);
+      setAbs(targets, 'rightUpperLeg', -swing * 0.6, 0, -0.04);
+      setAbs(targets, 'leftLowerLeg', Math.max(0, -swing) * 0.7, 0, 0);
+      setAbs(targets, 'rightLowerLeg', Math.max(0, swing) * 0.7, 0, 0);
+      armLift(targets, 'left', 0.14, -swing * 0.32, 0.2);
+      armLift(targets, 'right', 0.14, swing * 0.32, 0.2);
+      add(targets, 'spine', 0.04, 0, swing * 0.05);
+      add(targets, 'head', -0.02, 0, -swing * 0.04);
+      // No bounce: y stays planted at 0
     },
   },
 };
@@ -557,6 +537,37 @@ function connectGateway() {
         playAudioChunk(payload);
         break;
     }
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Voice input — mic toggle (Alt+Shift+M from main), transcript → chat,
+ * VAD barge-in interrupts her speech the moment the user talks.
+ * ------------------------------------------------------------------ */
+const micUI = document.createElement('div');
+micUI.style.cssText = 'position:absolute;bottom:8px;left:50%;transform:translateX(-50%);' +
+  'padding:3px 10px;border-radius:10px;background:rgba(0,229,255,0.15);color:#00e5ff;' +
+  'font:600 11px Segoe UI;display:none;';
+micUI.textContent = '● listening';
+stageEl.appendChild(micUI);
+
+function sendUserSpeech(text) {
+  if (!ws || ws.readyState !== 1) return;
+  showBubble(text.slice(0, 90), true);
+  ws.send(JSON.stringify({ type: 'chat', payload: { query: text } }));
+}
+
+function bargeIn() {
+  if (speaking && currentSource) {
+    try { currentSource.stop(); } catch {}
+    speaking = false; audioLevel = 0;
+  }
+}
+
+if (window.__overlayMic?.initMic(sendUserSpeech, bargeIn)) {
+  window.hinataAPI?.onMicToggle(() => {
+    const on = window.__overlayMic.toggleMic();
+    micUI.style.display = on ? 'block' : 'none';
   });
 }
 

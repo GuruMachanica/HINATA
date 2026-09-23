@@ -1,17 +1,23 @@
-"""HermesEngine — runs the vendored NousResearch AIAgent (or a direct fallback)."""
+"""HermesEngine — vendored NousResearch AIAgent + direct completion fallback.
+
+Hot path: the tool loop calls chat_raw() (single completion, most reliable).
+Full agent power stays available via chat() with a hard timeout.
+"""
 from __future__ import annotations
 
 import json
 import logging
 import sys
 import urllib.request
-from typing import Optional
 
-from ...core.config import (
-    HERMES_DIR, MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME,
-)
+from ...core.config import HERMES_DIR, MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME
+from .completion_client import CompletionClient
+from .reply_salvage import clean_for_speech
+from .turn_timeout import AGENT_TIMEOUT_S, with_timeout
 
 log = logging.getLogger("hinata.hermes")
+
+_NUDGE = "Answer immediately in one short sentence. No deliberation, no re-checking."
 
 
 class HermesEngine:
@@ -20,6 +26,7 @@ class HermesEngine:
     def __init__(self) -> None:
         self._agent = None
         self._failed = False
+        self._client = CompletionClient()
 
     @property
     def available(self) -> bool:
@@ -49,33 +56,66 @@ class HermesEngine:
             self._failed = True
         return self._agent
 
+    def chat_raw(self, system: str, message: str) -> str:
+        """Single completion — the reliable hot path for the tool loop."""
+        try:
+            reply, _ = self._client.complete(system, message)
+            if reply:
+                return reply
+        except Exception as exc:
+            log.error("raw chat failed: %s", exc)
+            return "My brain is offline — is Ollama running with hinata-omni?"
+        # Thinking overran the cap: one nudge usually lands a clean stop.
+        try:
+            reply, _ = self._client.complete(system, f"{message}\n\n({_NUDGE})")
+            return reply or "Hmm, my thoughts drifted off. Ask me again?"
+        except Exception as exc:
+            log.error("nudge chat failed: %s", exc)
+            return "I lost that thought somewhere — ask me again?"
+
     def chat(self, system: str, message: str) -> str:
+        """Full Hermes agent turn (toolsets, continuations) with hard timeout."""
         agent = self._ensure()
         if agent is not None:
             try:
-                result = agent.run_conversation(message, system_message=system)
+                result = with_timeout(
+                    lambda: agent.run_conversation(message, system_message=system),
+                    AGENT_TIMEOUT_S, "hermes agent turn")
                 if isinstance(result, dict):
                     return str(result.get("final_response") or "")
                 return str(result or "")
             except Exception as exc:
                 log.warning("agent turn failed (%s) — fallback", exc)
-        return self._raw_chat(system, message)
+        return self.chat_raw(system, message)
 
-    def _raw_chat(self, system: str, message: str) -> str:
+    def chat_stream(self, system: str, message: str):
+        """Yield text deltas as they arrive (SSE stream from Ollama)."""
         body = json.dumps({
             "model": MODEL_NAME,
             "messages": [{"role": "system", "content": system},
                           {"role": "user", "content": message}],
-            "stream": False,
+            "stream": True,
         }).encode()
         req = urllib.request.Request(
             f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
             data=body, headers={"Content-Type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                data = json.loads(resp.read().decode())
-                return data["choices"][0]["message"]["content"].strip()
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                for raw_line in resp:
+                    line = raw_line.decode("utf-8", errors="replace").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        break
+                    try:
+                        delta = json.loads(payload)["choices"][0]["delta"]
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        continue
+                    piece = delta.get("content") or ""
+                    if piece:
+                        yield clean_for_speech(piece)
         except Exception as exc:
-            log.error("raw chat failed: %s", exc)
-            return "My brain is offline — is Ollama running with hinata-brain?"
+            log.error("stream failed (%s) — falling back", exc)
+            yield self.chat_raw(system, message)

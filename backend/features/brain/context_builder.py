@@ -16,9 +16,9 @@ class ContextBuilder:
         """Fetch memory history and KG associations in a single unified pass."""
         blocks = []
 
-        recent = self.bus.emit("memory.recent.query", {"limit": 10}).payload.get("turns") or []
+        recent = self.bus.emit("memory.recent.query", {"limit": 6}).payload.get("turns") or []
         if recent:
-            lines = [f"{'User' if t['role'] == 'user' else 'HINATA'}: {t['content'][:160]}"
+            lines = [f"{'User' if t['role'] == 'user' else 'HINATA'}: {t['content'][:120]}"
                      for t in recent]
             blocks.append("Recent conversation:\n" + "\n".join(lines))
 
@@ -27,7 +27,20 @@ class ContextBuilder:
         if kg_block:
             blocks.append(kg_block)
 
-        return "\n\n".join(blocks), bool(kg_block)
+        rag_hits = self._semantic(query)
+        if rag_hits:
+            lines = [f"({h['role']}) {h['content'][:150]}" for h in rag_hits]
+            blocks.append("Semantically related past conversation:\n" + "\n".join(lines))
+
+        return "\n\n".join(blocks), bool(kg_block or rag_hits)
+
+    def _semantic(self, query: str) -> list:
+        """RAG recall; empty on any failure so the brain never blocks on it."""
+        try:
+            from ...features.rag.vector_store import VectorStore
+            return VectorStore().search(query, limit=4)
+        except Exception:
+            return []
 
     def user_context(self, query: str) -> str:
         """Memory history + KG associations relevant to this query."""

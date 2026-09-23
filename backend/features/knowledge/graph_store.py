@@ -5,35 +5,12 @@ import time
 from typing import Any, Dict, List
 
 from ...core.database import db
-
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS entities (
-    name TEXT PRIMARY KEY, kind TEXT DEFAULT 'concept',
-    first_seen REAL, last_seen REAL, mention_count INTEGER DEFAULT 1
-);
-CREATE TABLE IF NOT EXISTS triples (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject TEXT NOT NULL, relation TEXT NOT NULL, object TEXT NOT NULL,
-    weight REAL DEFAULT 1.0, confidence REAL DEFAULT 0.5,
-    source TEXT DEFAULT 'inferred', created_at REAL, last_reinforced REAL,
-    UNIQUE(subject, relation, object)
-);
-CREATE INDEX IF NOT EXISTS idx_triples_subj ON triples(subject);
-CREATE INDEX IF NOT EXISTS idx_triples_obj ON triples(object);
-"""
-
-DECAY_AFTER_S = 14 * 86400
-DECAY_FACTOR = 0.92
-MIN_WEIGHT = 0.05
-
-
-def _escape_like(term: str) -> str:
-    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+from .kg_schema import KG_SCHEMA, DECAY_AFTER_S, DECAY_FACTOR, MIN_WEIGHT, escape_like, clamp_limit
 
 
 class KnowledgeGraphStore:
     def setup(self) -> None:
-        db.setup(_SCHEMA)
+        db.setup(KG_SCHEMA)
 
     def touch_entity(self, name: str, kind: str = "concept") -> None:
         now = time.time()
@@ -80,32 +57,29 @@ class KnowledgeGraphStore:
             conn.execute("DELETE FROM triples WHERE weight < ?", (MIN_WEIGHT,))
 
     def related(self, entity: str, limit: int = 15) -> List[Dict[str, Any]]:
-        safe_limit = max(1, min(int(limit or 15), 100))
         target = entity.strip().lower()
         rows = db.connect().execute(
             "SELECT subject, relation, object, weight, confidence, source FROM triples "
             "WHERE LOWER(subject)=? OR LOWER(object)=? ORDER BY weight DESC LIMIT ?",
-            (target, target, safe_limit),
+            (target, target, clamp_limit(limit, 15)),
         ).fetchall()
         return [dict(r) for r in rows]
 
     def search(self, term: str, limit: int = 8) -> List[Dict[str, Any]]:
-        safe_limit = max(1, min(int(limit or 8), 100))
-        like = f"%{_escape_like(term.strip().lower())}%"
+        like = f"%{escape_like(term.strip().lower())}%"
         rows = db.connect().execute(
             "SELECT subject, relation, object, weight, source FROM triples "
             "WHERE (LOWER(subject) LIKE ? ESCAPE '\\' OR LOWER(object) LIKE ? ESCAPE '\\') "
             "ORDER BY weight DESC LIMIT ?",
-            (like, like, safe_limit),
+            (like, like, clamp_limit(limit, 8)),
         ).fetchall()
         return [dict(r) for r in rows]
 
     def stated_facts(self, limit: int = 10) -> List[Dict[str, Any]]:
-        safe_limit = max(1, min(int(limit or 10), 100))
         rows = db.connect().execute(
             "SELECT relation, object, weight, confidence FROM triples "
             "WHERE source='stated' ORDER BY weight DESC, last_reinforced DESC LIMIT ?",
-            (safe_limit,),
+            (clamp_limit(limit, 10),),
         ).fetchall()
         return [dict(r) for r in rows]
 

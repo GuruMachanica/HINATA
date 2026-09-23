@@ -20,9 +20,11 @@ setup_all()
 # Proactive engine needs the running brain; wire after setup
 from .features.brain import BrainFeature  # noqa: E402
 from .features.proactive import ProactiveEngine  # noqa: E402
+from .features.brain.warmup import warm_model  # noqa: E402
 
 brain = get(BrainFeature.name)
 proactive = ProactiveEngine(bus, brain.think)
+warm_model()  # preload the Ollama model so first reply is fast
 
 app = get("server").app
 
