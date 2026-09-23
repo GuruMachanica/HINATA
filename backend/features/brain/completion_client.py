@@ -9,7 +9,7 @@ import json
 import logging
 import urllib.request
 
-from ...core.config import MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME, THINK_BUDGET
+from ...core.config import MODEL_API_KEY, MODEL_NAME, THINK_BUDGET, model_endpoint
 from .reply_salvage import salvage_reply
 
 log = logging.getLogger("hinata.hermes")
@@ -28,7 +28,7 @@ class CompletionClient:
             "max_tokens": THINK_BUDGET,
         }).encode()
         req = urllib.request.Request(
-            f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
+            f"{model_endpoint().rstrip('/')}/chat/completions",
             data=body,
             headers={"Content-Type": "application/json",
                      "Authorization": f"Bearer {MODEL_API_KEY}"},

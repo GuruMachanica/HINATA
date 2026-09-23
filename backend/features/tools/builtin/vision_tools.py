@@ -7,7 +7,7 @@ import json
 import urllib.request
 from typing import Any
 
-from ....core.config import MODEL_API_KEY, MODEL_ENDPOINT, VISION_MODEL
+from ....core.config import MODEL_API_KEY, VISION_MODEL, model_endpoint
 from ..base import Tool, ToolParam, ToolResult, ToolRiskLevel
 
 try:
@@ -51,7 +51,7 @@ def ask_vlm(question: str, jpeg_bytes: bytes) -> str:
         "max_tokens": 500, "stream": False,
     }).encode()
     req = urllib.request.Request(
-        f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
+        f"{model_endpoint().rstrip('/')}/chat/completions",
         data=body,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {MODEL_API_KEY}"},
     )

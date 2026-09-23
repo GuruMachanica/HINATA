@@ -11,11 +11,12 @@ import time
 import urllib.request
 from typing import Dict, List, Optional, Tuple
 
-from ...core.config import MODEL_ENDPOINT
+from ...core.config import model_endpoint
 from ...core.database import db
 
 EMBED_MODEL = "nomic-embed-text"
-_EMBED_URL = MODEL_ENDPOINT.replace("/v1", "") + "/api/embeddings"
+def _embed_url() -> str:
+    return model_endpoint().replace("/v1", "") + "/api/embeddings"
 _TOP_K = 6
 _MIN_SIM = 0.35
 
@@ -53,7 +54,7 @@ class VectorStore:
     def _embed(self, text: str) -> Optional[List[float]]:
         body = json.dumps({"model": EMBED_MODEL, "prompt": text[:800]}).encode()
         req = urllib.request.Request(
-            _EMBED_URL, data=body, headers={"Content-Type": "application/json"})
+            _embed_url(), data=body, headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
                 return json.loads(resp.read().decode())["embedding"]

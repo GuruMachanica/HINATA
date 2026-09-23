@@ -1,0 +1,93 @@
+name: Release HINATA
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backend-exe:
+    name: Build hinata-backend.exe (bundled brain)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build React frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Stage bundled models (download Q4_K_M + mmproj)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force product/bundled-models | Out-Null
+          Invoke-WebRequest -Uri "${{ env.GGUF_MODEL }}" -OutFile product/bundled-models/hinata-omni-q4km.gguf
+          Invoke-WebRequest -Uri "${{ env.GGUF_MMPROJ }}" -OutFile product/bundled-models/hinata-omni-mmproj.gguf
+        env:
+          GGUF_MODEL: https://huggingface.co/prithivMLmods/Qwen3-VL-2B-Thinking-abliterated-v1-GGUF/resolve/main/Qwen3-VL-2B-Thinking-abliterated-v1.Q4_K_M.gguf
+          GGUF_MMPROJ: https://huggingface.co/prithivMLmods/Qwen3-VL-2B-Thinking-abliterated-v1-GGUF/resolve/main/Qwen3-VL-2B-Thinking-abliterated-v1.mmproj-Q8_0.gguf
+
+      - name: Stage slim hermes-agent
+        shell: pwsh
+        run: |
+          # Build slim staging copy: only .py + config files ship in the exe
+          robocopy hermes-agent product/hermes-agent-slim /E *.py *.md *.json *.toml /XF test_* *_test.py
+          exit 0
+
+      - name: Build exe
+        run: python -m PyInstaller product/hinata-backend.spec --noconfirm
+
+      - name: Smoke test (exe boots)
+        shell: pwsh
+        run: |
+          Start-Process -FilePath dist/hinata-backend.exe -PassThru | Out-Null
+          Start-Sleep -Seconds 20
+          $r = try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ -TimeoutSec 5 } catch { $_.Exception.Response }
+          if (-not $r) { throw "exe did not serve HTTP" }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hinata-backend-windows
+          path: dist/hinata-backend.exe
+
+  release:
+    name: Attach exe to GitHub Release
+    needs: backend-exe
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: hinata-backend-windows
+          path: .
+
+      - name: Create release and upload exe
+        uses: softprops/action-gh-release@v2
+        with:
+          name: HINATA ${{ github.ref_name }}
+          body: |
+            HINATA — Human-like Intelligent Nurturing Autonomous Tomodachi Architecture
+
+            **Download:** `hinata-backend.exe` — single-file backend with the full
+            brain bundled (hinata-omni Q4_K_M multimodal GGUF + vision projector).
+
+            **First run requirements:** [Ollama](https://ollama.com) running locally.
+            The exe provisions its model into Ollama automatically on first boot.
+          files: hinata-backend.exe
+          draft: false
+          prerelease: false

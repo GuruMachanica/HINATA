@@ -2,18 +2,24 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-BACKEND_DIR = ROOT_DIR / "backend"
-DB_PATH = BACKEND_DIR / "hinata.db"
-HERMES_DIR = ROOT_DIR / "hermes-agent"
-SOUL_PATH = ROOT_DIR / "hermes-core" / "config" / "SOUL.md"
-NEURAL_TTS_PY = ROOT_DIR / "voice" / "neural_tts.py"
-FRONTEND_DIST = ROOT_DIR / "frontend" / "dist"
-VRM_ASSETS = ROOT_DIR / "shell-bella" / "models"
+from .paths import (
+    BASE_DIR, BUNDLE_DIR, DB_PATH, HERMES_DIR, FRONTEND_DIST,
+    LOG_DIR, NEURAL_TTS_PY, SOUL_PATH, VRM_ASSETS,
+)
+
+ROOT_DIR = BASE_DIR  # compatibility alias (exe dir when frozen, project root in dev)
 
 MODEL_ENDPOINT = os.getenv("HINATA_MODEL_ENDPOINT", "http://127.0.0.1:11434/v1")
+
+
+def model_endpoint() -> str:
+    """Live endpoint — re-reads env so the engine bootstrap can retarget it.
+
+    Import-time constants freeze before EngineBootstrap runs; every consumer
+    must call this (or read the module attribute lazily) instead.
+    """
+    return os.getenv("HINATA_MODEL_ENDPOINT", MODEL_ENDPOINT)
 MODEL_NAME = os.getenv("HINATA_MODEL_NAME", "hinata-omni")
 MODEL_API_KEY = os.getenv("HINATA_MODEL_KEY", "ollama")
 VISION_MODEL = os.getenv("HINATA_VISION_MODEL", "hinata-omni")  # same model: text + vision + thinking

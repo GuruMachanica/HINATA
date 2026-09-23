@@ -41,10 +41,12 @@
 ## Release plan
 
 ### v1.2 — "She's a product" (distribution)
-- [ ] PyInstaller backend → `hinata-backend.exe`; Electron builder → signed NSIS installer
-- [ ] First-run wizard: pull model → test voice → pick persona → done
+- [x] PyInstaller backend → `hinata-backend.exe` — **single file, brain included**: hinata-omni Q4_K_M GGUF + vision projector bundled inside the exe; auto-provisions into local Ollama on first boot (`backend/core/provision.py`)
+- [x] GitHub Actions release workflow — tag `v*` triggers: frontend build → GGUF download → exe build → smoke test → GitHub Release with the exe attached (`.github/workflows/release.yml`)
+- [x] Local build/doctor script — `python product/setup.py build|doctor`
+- [ ] Electron builder → signed NSIS installer (exe currently launched via `start-hinata-desktop.bat`)
+- [ ] First-run wizard UI: test voice → pick persona → done (model pull is already automatic)
 - [ ] Auto-start with Windows (opt-in), crash reporter (local logs, never auto-sends)
-- [ ] Streaming speech wired into the overlay UI (backend already emits `speech_chunk`)
 
 ### v1.3 — "She's aware" (depth)
 - [ ] Mood-aware idle behaviors (sad → sits, excited → wanders more) tied to movement engine

@@ -10,7 +10,8 @@ import logging
 import sys
 import urllib.request
 
-from ...core.config import HERMES_DIR, MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME, THINK_BUDGET
+from ...core.config import (HERMES_DIR, MODEL_API_KEY, MODEL_NAME, THINK_BUDGET,
+                            model_endpoint)
 from .completion_client import CompletionClient
 from .reply_salvage import clean_for_speech
 from .turn_timeout import AGENT_TIMEOUT_S, with_timeout
@@ -45,7 +46,7 @@ class HermesEngine:
             self._agent = run_agent.AIAgent(
                 provider="openai_compatible",
                 model=MODEL_NAME,
-                base_url=MODEL_ENDPOINT,
+                base_url=model_endpoint(),
                 api_key=MODEL_API_KEY,
                 enabled_toolsets=[],
                 quiet_mode=True, skip_memory=True, skip_background_review=True,
@@ -98,7 +99,7 @@ class HermesEngine:
             "max_tokens": THINK_BUDGET,  # bound thinking time on streams too
         }).encode()
         req = urllib.request.Request(
-            f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
+            f"{model_endpoint().rstrip('/')}/chat/completions",
             data=body, headers={"Content-Type": "application/json"},
         )
         try:

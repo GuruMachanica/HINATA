@@ -6,7 +6,7 @@ import logging
 import threading
 import urllib.request
 
-from ...core.config import MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME
+from ...core.config import MODEL_API_KEY, MODEL_NAME, model_endpoint
 
 log = logging.getLogger("hinata.warmup")
 
@@ -26,7 +26,7 @@ def _warm() -> None:
         "max_tokens": 1, "stream": False,
     }).encode()
     req = urllib.request.Request(
-        f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
+        f"{model_endpoint().rstrip('/')}/chat/completions",
         data=body,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {MODEL_API_KEY}"},
     )

@@ -104,3 +104,10 @@ hermes-agent/**/*.mp4
 vendor/**/*.gif
 vendor/**/*.mp4
 
+
+# model staging for exe bundling (huge, never commit)
+product/bundled-models/
+dist/
+build/
+product/engine/
+models_ollama/
