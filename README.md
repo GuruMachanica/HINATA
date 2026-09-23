@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/React%20%2B%20Vite-Cortex-141414?style=for-the-badge&logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/VRM-Embodied%20Companion-141414?style=for-the-badge" alt="VRM" />
   <img src="https://img.shields.io/badge/Privacy-Local%20First-141414?style=for-the-badge&logo=shield&logoColor=white" alt="Privacy" />
-  <img src="https://img.shields.io/badge/Release-v1.1.0-141414?style=for-the-badge&logo=github&logoColor=white" alt="Release" />
+  <img src="https://img.shields.io/badge/Release-v1.2.0-141414?style=for-the-badge&logo=github&logoColor=white" alt="Release" />
 </p>
 
 ---
@@ -263,7 +263,7 @@ The vendored Hermes agent remains available, but the system does not force every
 
 > The current product build bundles the local llama.cpp Vulkan engine and multimodal GGUF assets, removing the need for Ollama in the packaged backend.
 
-## Current State — v1.1.0
+## Current State — v1.2.0
 
 | Layer | Status |
 |---|---|
@@ -495,9 +495,9 @@ Model and dependency licenses remain governed by their upstream projects; the re
 
 Copyright (c) 2026 Mohammad Huzaifa. All rights reserved.
 
-Permission is limited to inspection of the repository's source code, architecture, and documentation for private educational study and peer inspection. Running, deploying, copying, redistributing, creating derivative works, commercial exploitation, unauthorized model training, and unauthorized academic submission are restricted.
+Permission is granted solely for private educational study, personal learning, and peer inspection. Execution, deployment, copying, redistribution, derivative works, commercial exploitation, unauthorized AI training, and unauthorized academic submission are prohibited without prior written authorization.
 
-See [LICENSE](LICENSE) for the complete terms.
+See [LICENSE](LICENSE) for the complete terms, including third-party material exclusions and attribution requirements.
 
 ---
 
