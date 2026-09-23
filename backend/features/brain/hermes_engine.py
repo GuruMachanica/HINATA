@@ -10,7 +10,7 @@ import logging
 import sys
 import urllib.request
 
-from ...core.config import HERMES_DIR, MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME
+from ...core.config import HERMES_DIR, MODEL_API_KEY, MODEL_ENDPOINT, MODEL_NAME, THINK_BUDGET
 from .completion_client import CompletionClient
 from .reply_salvage import clean_for_speech
 from .turn_timeout import AGENT_TIMEOUT_S, with_timeout
@@ -95,6 +95,7 @@ class HermesEngine:
             "messages": [{"role": "system", "content": system},
                           {"role": "user", "content": message}],
             "stream": True,
+            "max_tokens": THINK_BUDGET,  # bound thinking time on streams too
         }).encode()
         req = urllib.request.Request(
             f"{MODEL_ENDPOINT.rstrip('/')}/chat/completions",
@@ -115,7 +116,7 @@ class HermesEngine:
                         continue
                     piece = delta.get("content") or ""
                     if piece:
-                        yield clean_for_speech(piece)
+                        yield clean_for_speech(piece, preserve_edges=True)
         except Exception as exc:
             log.error("stream failed (%s) — falling back", exc)
             yield self.chat_raw(system, message)

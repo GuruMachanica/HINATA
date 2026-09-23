@@ -6,9 +6,14 @@ import logging
 from typing import Callable
 
 from ...core.event_bus import EventBus
+from .reply_events import send_result, speak_chunk, speak_full
 from .state import ConnectionState
 
 log = logging.getLogger("hinata.server")
+
+
+async def _to_thread(fn, *args):
+    return await asyncio.to_thread(fn, *args)
 
 
 class WSChatHandler:
@@ -17,11 +22,13 @@ class WSChatHandler:
         self.bus = bus
         self.brain_think = brain_think
         self.brain_think_stream = brain_think_stream
+        self._chunk_idx = 0
 
     async def handle_chat(self, conn: ConnectionState, query: str) -> None:
         if not query.strip():
             return
         await conn.send_state("thinking")
+        log.info("chat: %r (stream=%s)", query[:50], self.brain_think_stream is not None)
         try:
             if self.brain_think_stream:
                 await self._streamed(conn, query)
@@ -37,64 +44,32 @@ class WSChatHandler:
             await conn.send_state("online")
 
     async def _streamed(self, conn: ConnectionState, query: str) -> None:
-        """Fast path: sentence chunks stream out (and get TTS'd) as they form."""
-        loop = asyncio.get_event_loop()
+        """Fast path: sentence chunks stream out, TTS'd + played as they form."""
+        main_loop = asyncio.get_running_loop()
+        pending = []  # futures for scheduled chunk sends, awaited before reply
 
         def on_chunk(idx: int, text: str, is_final: bool) -> None:
-            if text:
-                asyncio.run_coroutine_threadsafe(
-                    conn.send("speech_chunk", {"text": text, "index": idx}), loop)
+            if not text:
+                return
+            self._chunk_idx += 1
+            fut = asyncio.run_coroutine_threadsafe(
+                speak_chunk(conn, text, self._chunk_idx), main_loop)
+            pending.append(fut)
 
         result = await _to_thread(self.brain_think_stream, query, on_chunk)
 
-        await conn.send_state("speaking")
-        await conn.send("agent_response", {
-            "content": result.get("reply") or "Understood.",
-            "mood": result.get("mood", "calm"),
-            "latency_ms": result.get("latency_ms", 0),
-            "streamed": result.get("streamed", False),
-        })
-        if result.get("trace"):
-            await conn.send("tool_trace", {"calls": result["trace"]})
-        await self._mood(conn, result)
-        # TTS is dispatched per-chunk inside brain_think_stream; audio_uri events
-        # were already pushed as speech_audio with matching index.
+        # Ensure every chunk TTS/send completed before the reply event so the
+        # client never sees agent_response before her voice starts.
+        for fut in pending:
+            try:
+                await asyncio.wrap_future(fut)
+            except Exception as exc:
+                log.warning("chunk send failed: %s", exc)
+
+        await send_result(conn, result)
         await conn.send("speech_done", {"streamed": True})
 
     async def _classic(self, conn: ConnectionState, query: str) -> None:
         result = await _to_thread(self.brain_think, query)
-        await conn.send_state("speaking")
-        await conn.send("agent_response", {
-            "content": result.get("reply") or "Understood.",
-            "mood": result.get("mood", "calm"),
-            "latency_ms": result.get("latency_ms", 0),
-        })
-        if result.get("trace"):
-            await conn.send("tool_trace", {"calls": result["trace"]})
-        await self._mood(conn, result)
-        await self._voice(conn, result.get("reply") or "")
-
-    async def _mood(self, conn: ConnectionState, result: dict) -> None:
-        meta = result.get("mood_meta") or {"expression": "neutral"}
-        await conn.send("avatar_mood", {
-            "mood": result.get("mood", "calm"),
-            "expression": meta.get("expression", "neutral"),
-            "behavior": meta.get("behavior"),
-        })
-
-    async def _voice(self, conn: ConnectionState, reply: str) -> None:
-        if not reply:
-            return
-        try:
-            from ...features.voice import VoiceFeature
-            from ...core.base_feature import get
-            voice: VoiceFeature = get(VoiceFeature.name)
-            audio_uri = await _to_thread(voice.synthesize, reply)
-            if audio_uri:
-                await conn.send("speech_chunk", {"text": reply, "audio": audio_uri})
-        except Exception as exc:
-            log.warning("TTS synthesis failed: %s", exc)
-
-
-async def _to_thread(fn, *args):
-    return await asyncio.to_thread(fn, *args)
+        await send_result(conn, result)
+        await speak_full(conn, result.get("reply") or "")

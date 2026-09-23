@@ -10,6 +10,9 @@ from typing import Callable, Dict, Optional
 from ...core.config import STREAM_MIN_CHUNK_CHARS, STREAMING_ENABLED
 from .stream_chunker import StreamChunker
 
+import logging
+log = logging.getLogger("hinata.stream")
+
 # Callback(chunk_index, chunk_text, is_final)
 ChunkCallback = Callable[[int, str, bool], None]
 
@@ -41,6 +44,14 @@ class StreamingReply:
             chunk_idx += 1
 
         full = "".join(parts)
+        if not full.strip():
+            log.warning("stream produced no content — nudge fallback")
+            # Thinking overran the budget: zero content deltas. One nudge
+            # completion lands a clean answer — speak it as a single chunk.
+            full = self.engine.chat_raw(system, f"{user_msg}\n\n(Answer immediately in one short sentence. No deliberation.)")
+            if full and on_chunk:
+                on_chunk(0, full, False)
+                chunk_idx += 1
         if on_chunk and chunk_idx > 0:
             on_chunk(chunk_idx, "", True)  # final marker
         return self._result(full, streamed=chunk_idx > 0)

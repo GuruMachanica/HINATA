@@ -57,12 +57,20 @@ def conclusion_from_thinking(thinking: str) -> str:
     return ""
 
 
-def clean_for_speech(text: str) -> str:
-    """Strip emojis, mood tags, stage directions, dangling markdown."""
+def clean_for_speech(text: str, preserve_edges: bool = False) -> str:
+    """Strip emojis, mood tags, stage directions, dangling markdown.
+
+    preserve_edges: keep leading/trailing whitespace — used for streaming
+    deltas where a leading space carries word separation ('The' + ' sky').
+    """
+    lead = " " if (text or "").startswith(" ") else ""
+    trail = " " if (text or "").endswith(" ") else ""
     out = MOOD_TAG_RE.sub(" ", text or "")
     out = EMOJI_RE.sub("", out)
     out = STAGE_DIRECTION_RE.sub("", out)
     out = re.sub(r"<think>.*?</think>", "", out, flags=re.DOTALL)
     out = re.sub(r"[ \t]{2,}", " ", out)
     out = re.sub(r"\n{3,}", "\n\n", out)
+    if preserve_edges:
+        return f"{lead}{out.strip()}{trail}"
     return out.strip()

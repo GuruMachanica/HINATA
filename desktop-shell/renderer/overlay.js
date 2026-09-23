@@ -320,6 +320,31 @@ function applyAmbientWind(t) {
   } catch (e) { /* spring bone manager API mismatch — degrade silently */ }
 }
 
+/* ------------------------------------------------------------------ *
+ * Mood state machine — her temperament drives body language.
+ * happy/excited → wave burst then energetic idle · sad/concerned → she
+ * sits for a while · curious → looks around · calm/neutral → plain idle.
+ * ------------------------------------------------------------------ */
+let moodBehaviorUntil = 0;
+
+function applyMoodState(payload) {
+  if (payload.expression) applyExpression(payload.expression);
+  const mood = payload.mood || 'neutral';
+  const now = performance.now();
+
+  const actions = {
+    excited:  () => { setBehavior('wave'); moodBehaviorUntil = now + 3500; },
+    happy:    () => { setBehavior('wave'); moodBehaviorUntil = now + 2800; },
+    curious:  () => { setBehavior('look'); moodBehaviorUntil = now + 5000; },
+    concerned:() => { setBehavior('think'); moodBehaviorUntil = now + 6000; },
+    sad:      () => { setBehavior('sit');  moodBehaviorUntil = now + 25000; },
+    angry:    () => { setBehavior('think'); moodBehaviorUntil = now + 5000; },
+    calm:     () => { setBehavior('idle'); moodBehaviorUntil = now + 1500; },
+    neutral:  () => { setBehavior('idle'); moodBehaviorUntil = 0; },
+  };
+  (actions[mood] || actions.neutral)();
+}
+
 /* Idle variation: occasionally strike a pose, then return to idle */
 const IDLE_ALTERNATES = ['look', 'stretch', 'think'];
 let idleVariationUntil = 0;
@@ -328,6 +353,10 @@ let savedBehaviorForVariation = null;
 
 function updateIdleVariation() {
   const now = performance.now();
+  if (now < moodBehaviorUntil) return; // mood behavior holds the stage
+  if (behavior === 'sit' && now >= moodBehaviorUntil) {
+    setBehavior('idle'); // sad phase over — she stands back up
+  }
   if (behavior === 'idle' && now > idleVariationNext && now > idleVariationUntil) {
     savedBehaviorForVariation = 'idle';
     setBehavior(IDLE_ALTERNATES[Math.floor(Math.random() * IDLE_ALTERNATES.length)]);
@@ -527,14 +556,13 @@ function connectGateway() {
         showBubble(payload.content.slice(0, 140));
         break;
       case 'avatar_mood':
-        if (payload.expression) applyExpression(payload.expression);
-        if (payload.mood === 'happy' || payload.mood === 'excited') {
-          setBehavior('wave');
-          setTimeout(() => setBehavior('idle'), 2800);
-        }
+        applyMoodState(payload);
         break;
       case 'speech_chunk':
-        playAudioChunk(payload);
+        queueAudioChunk(payload);
+        break;
+      case 'speech_done':
+        // nothing further — queue drains naturally
         break;
     }
   });
@@ -558,6 +586,7 @@ function sendUserSpeech(text) {
 }
 
 function bargeIn() {
+  audioQueue.length = 0; // drop pending chunks so she stops instantly
   if (speaking && currentSource) {
     try { currentSource.stop(); } catch {}
     speaking = false; audioLevel = 0;
@@ -569,6 +598,26 @@ if (window.__overlayMic?.initMic(sendUserSpeech, bargeIn)) {
     const on = window.__overlayMic.toggleMic();
     micUI.style.display = on ? 'block' : 'none';
   });
+}
+
+/* Streaming speech: chunks arrive while she is still thinking; they are
+ * queued and played sequentially so her voice starts within ~1.5s. */
+const audioQueue = [];
+let draining = false;
+
+function queueAudioChunk(payload) {
+  if (!payload?.audio) return;
+  audioQueue.push(payload);
+  if (!draining) drainAudioQueue();
+}
+
+async function drainAudioQueue() {
+  draining = true;
+  while (audioQueue.length > 0) {
+    const payload = audioQueue.shift();
+    await playAudioChunk(payload);
+  }
+  draining = false;
 }
 
 async function playAudioChunk(payload) {
@@ -599,6 +648,8 @@ async function playAudioChunk(payload) {
     speaking = true;
     currentSource = source;
     source.start();
+    // wait for this chunk to finish before playing the next
+    await new Promise((resolve) => { source.onended = () => { speaking = false; audioLevel = 0; resolve(); }; });
   } catch (e) {
     console.warn('[HINATA overlay] audio playback failed', e);
   }
