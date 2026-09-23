@@ -13,8 +13,9 @@ datas = [
     # Voice TTS subprocess script
     (os.path.join(ROOT, 'voice', 'neural_tts.py'), 'voice'),
     (os.path.join(ROOT, 'voice', 'voice_manifest.json'), 'voice'),
-    # VRM model assets served by the backend
-    (os.path.join(ROOT, 'shell-bella', 'models'), 'models'),
+    # Optional VRM model assets. The repository may intentionally omit these
+    # third-party assets (licensing/redistribution), so never make the product
+    # build depend on a developer-only shell-bella/models directory.
     # React UI build output
     (os.path.join(ROOT, 'frontend', 'dist'), 'frontend_dist'),
     # Vendored Hermes agent source — slim staging copy (py + configs only)
