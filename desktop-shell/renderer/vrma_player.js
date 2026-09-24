@@ -40,11 +40,7 @@ function buildTracks(json) {
     if (!node?.rotation) continue;
     const q = node.rotation; // flat array [x,y,z,w] * frames
     const frames = q.length / 4;
-    const values = new Float32Array(frames * 4);
-    for (let f = 0; f < frames; f++) {
-      values[f * 4] = q[f * 4]; values[f * 4 + 1] = q[f * 4 + 1];
-      values[f * 4 + 2] = q[f * 4 + 2]; values[f * 4 + 3] = q[f * 4 + 3];
-    }
+    const values = new Float32Array(q);
     const track = new THREE.QuaternionKeyframeTrack(
       `.bones.${ourName}`, times.slice(0, frames), values);
     tracks.push(track);
