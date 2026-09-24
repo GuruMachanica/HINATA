@@ -18,13 +18,22 @@ from .core.config import LOG_LEVEL, PROACTIVE_ENABLED
 from .core.paths import BUNDLE_DIR
 from .core.base_feature import get, setup_all
 from .core.event_bus import bus
+import os  # noqa: E402  (used by fast-engine env wiring)
 
 logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(name)s: %(message)s")
 
 # Bundled llama.cpp engine first: if present, it becomes the model endpoint
 # (zero external dependencies). Falls back to Ollama automatically.
 from .core.engine_bootstrap import EngineBootstrap, apply_engine_override  # noqa: E402
-apply_engine_override(EngineBootstrap().start())
+_bootstrap = EngineBootstrap()
+apply_engine_override(_bootstrap.start())
+
+# Optional fast chat model (tiny non-thinking GGUF on a second slot)
+from .core.fast_engine import FastEngine, fast_endpoint  # noqa: E402
+_fast = FastEngine()
+_fast_url = _fast.start(_bootstrap.server_exe)
+if _fast_url:
+    os.environ["HINATA_FAST_ENDPOINT"] = _fast_url
 
 # First-run provisioning: create hinata-omni from bundled GGUFs when missing
 from .core.provision import FirstRunProvisioner  # noqa: E402

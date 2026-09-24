@@ -13,7 +13,8 @@ import urllib.request
 from ...core.config import (HERMES_DIR, MODEL_API_KEY, MODEL_NAME, THINK_BUDGET,
                             model_endpoint)
 from .completion_client import CompletionClient
-from .reply_salvage import clean_for_speech
+from .fast_lane import make_fast_lane
+from .omni_stream import stream_omni
 from .turn_timeout import AGENT_TIMEOUT_S, with_timeout
 
 log = logging.getLogger("hinata.hermes")
@@ -28,6 +29,7 @@ class HermesEngine:
         self._agent = None
         self._failed = False
         self._client = CompletionClient()
+        self._fast: make_fast_lane | None = None
 
     @property
     def available(self) -> bool:
@@ -58,7 +60,10 @@ class HermesEngine:
         return self._agent
 
     def chat_raw(self, system: str, message: str) -> str:
-        """Single completion — the reliable hot path for the tool loop."""
+        """Fast lane first, then omni single completion (tool loop hot path)."""
+        fast = self._fast.maybe_reply(system, message) if self._fast else None
+        if fast:
+            return fast
         try:
             reply, _ = self._client.complete(system, message)
             if reply:
@@ -89,35 +94,23 @@ class HermesEngine:
                 log.warning("agent turn failed (%s) — fallback", exc)
         return self.chat_raw(system, message)
 
+    def wire_router(self) -> None:
+        """Called at feature setup: activate the fast lane if bundled."""
+        self._fast = make_fast_lane()
+        self._fast.wire()
+
     def chat_stream(self, system: str, message: str):
-        """Yield text deltas as they arrive (SSE stream from Ollama)."""
-        body = json.dumps({
-            "model": MODEL_NAME,
-            "messages": [{"role": "system", "content": system},
-                          {"role": "user", "content": message}],
-            "stream": True,
-            "max_tokens": THINK_BUDGET,  # bound thinking time on streams too
-        }).encode()
-        req = urllib.request.Request(
-            f"{model_endpoint().rstrip('/')}/chat/completions",
-            data=body, headers={"Content-Type": "application/json"},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
-                for raw_line in resp:
-                    line = raw_line.decode("utf-8", errors="replace").strip()
-                    if not line.startswith("data:"):
-                        continue
-                    payload = line[5:].strip()
-                    if payload == "[DONE]":
-                        break
-                    try:
-                        delta = json.loads(payload)["choices"][0]["delta"]
-                    except (json.JSONDecodeError, KeyError, IndexError):
-                        continue
-                    piece = delta.get("content") or ""
-                    if piece:
-                        yield clean_for_speech(piece, preserve_edges=True)
-        except Exception as exc:
-            log.error("stream failed (%s) — falling back", exc)
-            yield self.chat_raw(system, message)
+        """Yield text deltas; simple turns take the fast lane first."""
+        fast = self._fast.maybe_reply(system, message) if self._fast else None
+        if fast:
+            yield fast
+            return
+        yield from self._stream_omni(system, message)
+
+    def _stream_omni(self, system: str, message: str):
+        got_any = False
+        for piece in stream_omni(system, message):
+            got_any = True
+            yield piece
+        if not got_any:  # stream died or thought overruns — nudge fallback
+            yield self.chat_raw(system, f"{message}\n\n({_NUDGE})")

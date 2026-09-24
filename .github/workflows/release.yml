@@ -105,9 +105,11 @@ jobs:
           New-Item -ItemType Directory -Force product/bundled-models | Out-Null
           Invoke-WebRequest -Uri "${{ env.GGUF_MODEL }}" -OutFile product/bundled-models/hinata-omni-q4km.gguf
           Invoke-WebRequest -Uri "${{ env.GGUF_MMPROJ }}" -OutFile product/bundled-models/hinata-omni-mmproj.gguf
+          Invoke-WebRequest -Uri "${{ env.GGUF_FAST }}" -OutFile product/bundled-models/hinata-fast-q4km.gguf
         env:
           GGUF_MODEL: https://huggingface.co/prithivMLmods/Qwen3-VL-2B-Thinking-abliterated-v1-GGUF/resolve/main/Qwen3-VL-2B-Thinking-abliterated-v1.Q4_K_M.gguf
           GGUF_MMPROJ: https://huggingface.co/prithivMLmods/Qwen3-VL-2B-Thinking-abliterated-v1-GGUF/resolve/main/Qwen3-VL-2B-Thinking-abliterated-v1.mmproj-Q8_0.gguf
+          GGUF_FAST: https://huggingface.co/bartowski/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf
 
       - name: Stage slim hermes-agent
         shell: pwsh

@@ -16,19 +16,24 @@ log = logging.getLogger("hinata.hermes")
 
 
 class CompletionClient:
+    def __init__(self, endpoint: str | None = None, model: str | None = None) -> None:
+        # Optional per-client lane override (fast model vs omni)
+        self._endpoint = endpoint
+        self._model = model
+
     def complete(self, system: str, message: str, timeout: int = 120) -> tuple[str, str]:
         """Returns (salvaged_reply, raw_content). Raises on HTTP failure."""
         body = json.dumps({
-            "model": MODEL_NAME,
+            "model": self._model or MODEL_NAME,
             "messages": [{"role": "system", "content": system},
                           {"role": "user", "content": message}],
             "stream": False,
             # 64K ctx keeps Hermes happy; the cap bounds thinking time.
             # OpenAI-compat layer maps max_tokens onto Ollama num_predict.
-            "max_tokens": THINK_BUDGET,
+            "max_tokens": THINK_BUDGET if not self._endpoint else 300,
         }).encode()
         req = urllib.request.Request(
-            f"{model_endpoint().rstrip('/')}/chat/completions",
+            f"{(self._endpoint or model_endpoint()).rstrip('/')}/chat/completions",
             data=body,
             headers={"Content-Type": "application/json",
                      "Authorization": f"Bearer {MODEL_API_KEY}"},

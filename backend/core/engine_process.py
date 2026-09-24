@@ -55,20 +55,31 @@ def extract_engine() -> Path | None:
     return dst / "llama-server.exe"
 
 
-def launch(server_exe: Path, model: Path, mmproj: Path, port: int) -> subprocess.Popen:
-    """Start llama-server with HINATA's tuned sampling parameters."""
+def launch(server_exe: Path, model: Path, mmproj: Path | None, port: int,
+           fast: bool = False) -> subprocess.Popen:
+    """Start llama-server with HINATA's tuned sampling parameters.
+
+    fast=True launches the tiny chat model: no mmproj, small context,
+    tighter caps so it loads in ~1s and answers in 1-3s.
+    """
     cmd = [
         str(server_exe),
         "-m", str(model),
-        "--mmproj", str(mmproj),
         "--port", str(port),
-        "-ngl", "99", "-c", "16384",
-        "--temp", "0.5", "--repeat-penalty", "1.2",
-        "--presence-penalty", "1.5", "-np", "2",
-        "--embeddings", "--pooling", "mean",
+        "-ngl", "99",
     ]
+    if fast:
+        cmd += ["-c", "4096", "--temp", "0.7", "--repeat-penalty", "1.1"]
+    else:
+        cmd += [
+            "--mmproj", str(mmproj),
+            "-c", "16384",
+            "--temp", "0.5", "--repeat-penalty", "1.2",
+            "--presence-penalty", "1.5", "-np", "2",
+            "--embeddings", "--pooling", "mean",
+        ]
     log.info("engine: launching llama-server on :%d ...", port)
-    log_path = BASE_DIR / "engine.log"
+    log_path = BASE_DIR / ("fast_engine.log" if fast else "engine.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_f = open(log_path, "w", encoding="utf-8")  # engine writes its own boot log
     return subprocess.Popen(

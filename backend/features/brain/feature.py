@@ -32,6 +32,7 @@ class BrainFeature(BaseFeature):
         tools = load_builtin_tools()
         self.agentic = AgenticToolLoop(tools)
         self.context = ContextBuilder(self.bus, tools)
+        self.engine.wire_router()
         self.log.info("agentic mode=%s, tools=%d", AGENTIC_MODE, len(tools.all()))
 
     def think(self, query: str) -> Dict[str, Any]:
