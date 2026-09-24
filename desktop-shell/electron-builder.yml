@@ -20,11 +20,11 @@ extraResources:
   - from: ../shell-bella/models/vrm
     to: models/vrm
 
-# Signing: wire a cert when purchased (task 2 scaffolding — harmless without)
+# Signing: wire a cert when purchased (task 2 scaffolding — harmless without).
+# electron-builder 24 signs automatically once win.certificateFile / env vars
+# (CSC_LINK, CSC_KEY_PASSWORD) are present; unsigned until then.
 win:
   target: nsis
-  signtoolOptions:
-    enabled: false   # flip true + env vars once a cert exists
 
 nsis:
   oneClick: false
