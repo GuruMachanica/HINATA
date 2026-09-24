@@ -9,6 +9,7 @@ const path = require('path');
 const { ensureBackendRunning, stopBackend } = require('./backend_launcher');
 const { createTray } = require('./tray_menu');
 const movement = require('./movement_engine');
+const updater = require('./updater');
 
 let mainWindow = null;
 let tray = null;
@@ -61,6 +62,7 @@ function createWindow() {
     console.error(`[overlay] renderer crashed: ${details.reason}`));
 
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'overlay.html'));
+  updater.attachWindow(mainWindow.webContents);
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
@@ -107,6 +109,7 @@ app.whenReady().then(async () => {
 
   // Packaged builds launch their own bundled backend; dev assumes it's running.
   await ensureBackendRunning();
+  if (app.isPackaged) updater.start(); // dev builds skip update checks
 });
 
 app.on('will-quit', () => {
@@ -114,6 +117,7 @@ app.on('will-quit', () => {
   clearInterval(cursorInterval);
   movement.stop();
   stopBackend();
+  updater.stop();
 });
 
 app.on('window-all-closed', () => {
