@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import * as vrma from './vrma_player.js';
 
 // contextIsolation means no `process` in the renderer — the preload bridge
 // exposes the port instead (falls back to 8080).
@@ -358,6 +359,13 @@ function updateIdleVariation() {
     setBehavior('idle'); // sad phase over — she stands back up
   }
   if (behavior === 'idle' && now > idleVariationNext && now > idleVariationUntil) {
+    // Half the time play a real motion clip (VRMA), else a procedural pose
+    if (vrma.available().length && Math.random() < 0.5) {
+      const names = vrma.available();
+      vrma.play(names[Math.floor(Math.random() * names.length)], currentVrm);
+      idleVariationNext = now + 22000 + Math.random() * 13000;
+      return;
+    }
     savedBehaviorForVariation = 'idle';
     setBehavior(IDLE_ALTERNATES[Math.floor(Math.random() * IDLE_ALTERNATES.length)]);
     idleVariationUntil = now + 3500 + Math.random() * 2500;
@@ -676,6 +684,11 @@ function animate() {
 
   if (currentVrm) {
     currentVrm.update(dt);
+    // A playing VRMA clip drives the rig directly; procedural pose resumes after
+    if (vrma.tick(currentVrm)) {
+      renderer.render(scene, camera);
+      return;
+    }
     applyPoseSmoothed(dt, t);
     updateEyeLookAt(dt);
     updateBlinkAndExpressions(dt, t);
@@ -699,6 +712,9 @@ function animate() {
     console.error('[HINATA overlay] VRM load failed — is the gateway running?', e);
     showBubble('Gateway offline — start it with: cd gateway && npm start');
   }
+  // Load bundled motion clips; ambient gestures fire from the idle loop
+  const n = await vrma.preloadAll(['VRMA_01','VRMA_02','VRMA_03','VRMA_04','VRMA_05','VRMA_06','VRMA_07']);
+  console.log(`[HINATA overlay] ${n} VRMA clips loaded`);
   connectGateway();
   animate();
 })();

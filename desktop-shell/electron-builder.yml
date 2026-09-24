@@ -13,10 +13,12 @@ files:
   - tray_icon.png
   - package.json
 
-# Backend exe is staged by CI into backend-exe/ before packaging
+# VRM + VRMA ride along with the shell (also fetched from LFS on CI)
 extraResources:
   - from: ../backend-exe/hinata-backend.exe
     to: backend/hinata-backend.exe
+  - from: ../shell-bella/models/vrm
+    to: models/vrm
 
 # Signing: wire a cert when purchased (task 2 scaffolding — harmless without)
 win:
