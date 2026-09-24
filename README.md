@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/React%20%2B%20Vite-Cortex-141414?style=for-the-badge&logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/VRM-Embodied%20Companion-141414?style=for-the-badge" alt="VRM" />
   <img src="https://img.shields.io/badge/Privacy-Local%20First-141414?style=for-the-badge&logo=shield&logoColor=white" alt="Privacy" />
-  <img src="https://img.shields.io/badge/Release-v1.2.0-141414?style=for-the-badge&logo=github&logoColor=white" alt="Release" />
+  <img src="https://img.shields.io/badge/Release-v1.3.0-141414?style=for-the-badge&logo=github&logoColor=white" alt="Release" />
 </p>
 
 ---
@@ -31,12 +31,13 @@ HINATA is a **fully local, autonomous AI companion for Windows**.
 Instead of splitting chat, vision, memory, tools, voice, and the desktop avatar across unrelated services, HINATA composes them into one local system:
 
 - **one multimodal model** for text, vision, and reasoning
+- **dual-model routing** — an instant fast lane for small talk, the omni lane for reasoning
 - **agentic tools** with validation and risk levels
 - **persistent conversation memory**
 - **semantic RAG recall**
 - **a weighted knowledge graph**
 - **persistent mood and personality**
-- **proactive background behavior**
+- **proactive background behavior**, including screen awareness
 - **streaming neural voice**
 - **an embodied VRM desktop companion**
 - **a bundled local inference engine for product builds**
@@ -65,10 +66,11 @@ The source repository is designed around local execution and local state.
           │                          │
           ├──────────────┐           │
           ▼              ▼           ▼
-       16 Tools       Proactivity   Mood
+       18 Tools       Proactivity   Mood
        web / files /  idle / health persistent
        shell / python session       temperament
        vision / apps / system
+       logs / health-check
           │
           ▼
    ┌────────────────────────────────────────┐
@@ -108,9 +110,17 @@ The same model handles:
 
 The documented architecture targets a **6 GB GPU class** machine.
 
+### Dual-Model Routing
+
+Not every turn needs the thinking model. A lightweight router classifies each
+query: greetings and simple chat are answered by a compact fast model on a
+second local endpoint, while memory, search, screen, and tool-heavy turns go
+to the full omni lane. Both endpoints are bundled llama.cpp servers started
+by the backend itself.
+
 ### Agentic Tool System
 
-HINATA exposes **16 tools** through a validated registry.
+HINATA exposes **18 tools** through a validated registry.
 
 | Capability | Examples |
 |---|---|
@@ -124,6 +134,7 @@ HINATA exposes **16 tools** through a validated registry.
 | Memory | conversation lookup and management |
 | RAG | semantic retrieval |
 | Knowledge | graph search and fact operations |
+| Ops | log bundling and health summaries for support |
 
 Each tool declares a **risk level**, validates parameters before execution, and isolates runtime failures.
 
@@ -160,7 +171,7 @@ HINATA extracts and reinforces **subject → relation → object** triples with 
 
 HINATA has an explicit persona layer backed by `SOUL.md`, plus a persistent mood engine.
 
-Background triggers include idle time, system health, and new sessions. Proactivity is bounded and configurable.
+Background triggers include idle time, system health, new sessions, and — after a long conversation silence — an occasional autonomous glance at the screen with a warm observation. Proactivity is bounded and configurable.
 
 ### Embodied Desktop Companion
 
@@ -171,7 +182,7 @@ The companion can:
 - wander along the taskbar
 - track the cursor with her eyes
 - breathe and idle
-- play gesture one-shots
+- play gesture one-shots and bundled VRMA motion clips
 - change expressions from mood
 - lip-sync to generated speech
 - expose tray controls
@@ -251,6 +262,7 @@ The vendored Hermes agent remains available, but the system does not force every
 | Context | 65,536 tokens |
 | Thinking budget | 1,200 tokens |
 | Reference GPU | NVIDIA 6 GB class |
+| Fast lane | Qwen2.5-0.5B-Instruct Q4_K_M (second llama.cpp endpoint) |
 | Inference API | OpenAI-compatible local endpoint |
 | Product engine | bundled llama.cpp / Vulkan |
 | Fallback | Ollama-compatible endpoint |
@@ -263,12 +275,13 @@ The vendored Hermes agent remains available, but the system does not force every
 
 > The current product build bundles the local llama.cpp Vulkan engine and multimodal GGUF assets, removing the need for Ollama in the packaged backend.
 
-## Current State — v1.2.0
+## Current State — v1.3.0
 
 | Layer | Status |
 |---|---|
 | Multimodal brain | ✅ text + vision + thinking |
-| Agentic tools | ✅ 16 tools |
+| Dual-model routing | ✅ instant fast lane + omni reasoning lane |
+| Agentic tools | ✅ 18 tools |
 | Semantic memory | ✅ SQLite + embeddings + cosine recall |
 | Knowledge graph | ✅ weighted triples + decay |
 | Persistent memory | ✅ session-aware SQLite store |
@@ -276,10 +289,14 @@ The vendored Hermes agent remains available, but the system does not force every
 | Mood | ✅ persistent temperament + decay |
 | Proactivity | ✅ idle / health / session triggers |
 | Persona | ✅ `SOUL.md` behavior layer |
-| Desktop avatar | ✅ taskbar wandering VRM overlay |
+| Desktop avatar | ✅ taskbar-wandering VRM overlay with VRMA motion clips |
+| Proactive vision | ✅ autonomous screen glances after long silences |
 | Security | ✅ tool risk model, shell allowlist, Python AST sandbox |
 | Reliability | ✅ timeout, salvage, nudge retry, model warm-up |
-| Product packaging | ✅ bundled backend build + release workflow |
+| Crash reporting | ✅ rotating logs, crash dumps, log bundler tool |
+| Product packaging | ✅ NSIS installer + bundled backend build + release workflow |
+| Auto-update | ✅ electron-updater against GitHub releases |
+| Code signing | 🟨 scaffolding ready — flips on with a cert |
 
 ## Honest Limits
 
@@ -322,6 +339,8 @@ HINATA/
 │   │   ├── database.py           # serialized SQLite access
 │   │   ├── config.py             # runtime configuration
 │   │   ├── engine_bootstrap.py   # bundled llama.cpp startup
+│   │   ├── fast_engine.py        # second llama.cpp endpoint (fast lane)
+│   │   ├── logging_setup.py      # rotating logs + crash reporter
 │   │   ├── provision.py          # first-run model provisioning
 │   │   └── base_feature.py       # feature registry
 │   └── features/
@@ -407,7 +426,11 @@ python product/setup.py doctor
 python product/setup.py build
 ```
 
-Release builds are automated through GitHub Actions on `v*` tags.
+Release builds are automated through GitHub Actions on `v*` tags: the workflow builds the backend exe, then the NSIS installer via electron-builder, and attaches both to the GitHub Release. Installed shells check GitHub Releases every 6 hours for updates.
+
+### Installer (end users)
+
+Download `HINATA-x.y.z-setup.exe` from the [releases page](https://github.com/GuruMachanica/HINATA/releases) and run it — the llama.cpp Vulkan engine and all model assets are bundled, nothing else to install. `Alt+Shift+H` toggles her visibility.
 
 ## Configuration
 
@@ -430,6 +453,7 @@ HINATA_STREAM
 HINATA_STREAM_MIN_CHARS
 HINATA_PROACTIVE
 HINATA_PROACTIVE_INTERVAL
+HINATA_PROACTIVE_VISION
 HINATA_PORT
 HINATA_LOG_LEVEL
 HINATA_AUTH_TOKEN
@@ -450,12 +474,19 @@ HINATA_AUTH_TOKEN
 - first-run setup
 - installer and product UX hardening
 
-### v1.3 — Awareness
+### v1.3 — Awareness ✅ shipped
+
+- dual-model routing (fast lane + omni lane)
+- VRMA motion clips in the desktop overlay
+- proactive screen awareness
+- crash reporter + log bundler
+- NSIS installer + auto-update via electron-updater
+
+### v1.4 — Voice & Depth (next)
 
 - richer mood-driven animation states
 - fully local ASR
 - improved vector indexing
-- proactive screen awareness
 
 ### v2.0 — Ecosystem
 
