@@ -139,15 +139,51 @@ jobs:
           name: hinata-backend-windows
           path: dist/hinata-backend.exe
 
+  desktop-shell:
+    name: Build HINATA desktop shell (installer)
+    needs: backend-exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download backend exe artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hinata-backend-windows
+          path: backend-exe
+
+      - name: Build shell installer
+        run: |
+          cd desktop-shell
+          npm install
+          npm run dist
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hinata-shell-windows
+          path: desktop-shell/release/HINATA-*-setup.exe
+
   release:
     name: Attach exe to GitHub Release
-    needs: backend-exe
+    needs: [backend-exe, desktop-shell]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: hinata-backend-windows
+          path: .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: hinata-shell-windows
           path: .
 
       - name: Create release and upload exe
@@ -157,12 +193,17 @@ jobs:
           body: |
             HINATA — Human-like Intelligent Nurturing Autonomous Tomodachi Architecture
 
-            **Download:** `hinata-backend.exe` — single-file backend with the full
-            brain bundled (hinata-omni Q4_K_M multimodal GGUF + vision projector).
+            **Downloads:**
+            - `HINATA-x.y.z-setup.exe` — full desktop experience (installer:
+              overlay + taskbar sprite + bundled backend). Recommended.
+            - `hinata-backend.exe` — standalone backend only (serve the browser
+              UI directly).
 
             **Zero dependencies** — the llama.cpp inference engine (Vulkan GPU)
             and the full multimodal model are bundled inside. No Ollama needed.
             Requires only a modern Windows GPU driver. Alt+Shift+H toggles her.
-          files: hinata-backend.exe
+          files: |
+            hinata-backend.exe
+            HINATA-*-setup.exe
           draft: false
           prerelease: false

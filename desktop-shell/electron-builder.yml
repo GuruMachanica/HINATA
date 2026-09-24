@@ -1,0 +1,40 @@
+# HINATA desktop shell — electron-builder config
+appId: com.gurumachanica.hinata
+productName: HINATA
+copyright: Copyright (c) 2026 Mohammad Huzaifa — Proprietary, all rights reserved
+
+directories:
+  output: release
+  buildResources: .
+
+files:
+  - src/**/*
+  - renderer/**/*
+  - tray_icon.png
+  - package.json
+
+# Backend exe is staged by CI into backend-exe/ before packaging
+extraResources:
+  - from: ../backend-exe/hinata-backend.exe
+    to: backend/hinata-backend.exe
+
+# Signing: wire a cert when purchased (task 2 scaffolding — harmless without)
+win:
+  target: nsis
+  signtoolOptions:
+    enabled: false   # flip true + env vars once a cert exists
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: HINATA
+  artifactName: HINATA-${version}-setup.${ext}
+
+# electron-updater (task 3): releases live on GitHub
+publish:
+  provider: github
+  owner: GuruMachanica
+  repo: HINATA
