@@ -165,6 +165,10 @@ jobs:
           cd desktop-shell
           npm install
           npm run dist
+        env:
+          # electron-builder publishes the installer + latest.yml (auto-update
+          # metadata) straight to the draft release for this tag
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
@@ -181,11 +185,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: hinata-backend-windows
-          path: .
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: hinata-shell-windows
           path: .
 
       - name: Create release and upload exe
@@ -206,6 +205,5 @@ jobs:
             Requires only a modern Windows GPU driver. Alt+Shift+H toggles her.
           files: |
             hinata-backend.exe
-            HINATA-*-setup.exe
           draft: false
           prerelease: false
