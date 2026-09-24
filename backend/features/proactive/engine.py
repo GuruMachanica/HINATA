@@ -8,6 +8,7 @@ from typing import Callable, List
 from ...core.config import PROACTIVE_MIN_INTERVAL_S
 from ...core.event_bus import EventBus
 from .triggers import Trigger, IdleTrigger, SystemHealthTrigger, NewSessionTrigger
+from .vision_trigger import SceneVisionTrigger
 
 
 class ProactiveEngine:
@@ -16,6 +17,7 @@ class ProactiveEngine:
         self.brain_think = brain_think
         self.triggers: List[Trigger] = [
             IdleTrigger(bus), SystemHealthTrigger(bus), NewSessionTrigger(bus),
+            SceneVisionTrigger(bus),
         ]
         self._task: asyncio.Task | None = None
         self._running = False
