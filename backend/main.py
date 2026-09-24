@@ -20,7 +20,9 @@ from .core.base_feature import get, setup_all
 from .core.event_bus import bus
 import os  # noqa: E402  (used by fast-engine env wiring)
 
-logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(name)s: %(message)s")
+from .core.logging_setup import install_crash_reporter, setup_logging  # noqa: E402
+setup_logging(LOG_LEVEL)
+install_crash_reporter()
 
 # Bundled llama.cpp engine first: if present, it becomes the model endpoint
 # (zero external dependencies). Falls back to Ollama automatically.
