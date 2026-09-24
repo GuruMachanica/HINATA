@@ -1,9 +1,13 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { app, contextBridge, ipcRenderer } = require('electron');
 
 // Backend port from the main process env (safe to expose — non-secret config)
 const BACKEND_PORT = process.env.HINATA_PORT || '8080';
 
 contextBridge.exposeInMainWorld('HINATA_BACKEND_PORT', BACKEND_PORT);
+
+// VRM/VRMA asset resolution switches on this (see renderer/vrma_player.js):
+// packaged builds use extraResources next to the exe, dev uses the gateway.
+contextBridge.exposeInMainWorld('HINATA_MODE', app.isPackaged ? 'packaged' : 'dev');
 
 contextBridge.exposeInMainWorld('hinataAPI', {
   setIgnoreMouse: (ignore) => ipcRenderer.invoke('window:set-ignore-mouse', ignore),
